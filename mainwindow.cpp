@@ -7,31 +7,18 @@
 //TODO: save/load file, isModified()
 
 //Other
-//TODO: Create FA class
+//TODO: Create FA classes
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    QWidget *widget = new QWidget;
-    setCentralWidget(widget);
-/*
-    QWidget *topFiller = new QWidget;
-    topFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    QWidget *bottomFiller = new QWidget;
-    bottomFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    QVBoxLayout *layout = new QVBoxLayout;
-    layout->setContentsMargins(5, 5, 5, 5);
-    layout->addWidget(topFiller);
-    layout->addWidget(bottomFiller);
-    widget->setLayout(layout);
-*/
-
     createActions();
     createMenus();
     createStatusBar();
     createDockWindows();
+
+    QGraphicsView *scene = new QGraphicsView;
+    setCentralWidget(scene);
 
     readSettings();
     setCurrentFile(QString());
@@ -45,9 +32,8 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu menu(this);
-    menu.addAction(cutAct);
-    menu.addAction(copyAct);
-    menu.addAction(pasteAct);
+    menu.addAction(newAct);
+    menu.addAction(openAct);
     menu.exec(event->globalPos());
 }
 #endif // QT_NO_CONTEXTMENU
