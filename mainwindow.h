@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QtWidgets>
+#include "dfa.h"
 
 class MainWindow : public QMainWindow
 {

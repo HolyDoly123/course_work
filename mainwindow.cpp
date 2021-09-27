@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-
 //Mainwindow
 //TODO: Central widget (Graphic scene)
 //TODO: Dock window (graph tree)
@@ -8,6 +7,16 @@
 
 //Other
 //TODO: Create FA classes
+void consoleDebug()
+{
+    DFA automat("First");
+    qDebug() << automat.getName();
+    QSharedPointer<State> s(new State("S1", "Lol", "int=4;", false));
+    qDebug() << s.get()->getDescription();
+    automat.setInitial(s.get());
+}
+
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -25,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(tr("PCADDFA"));
     setMinimumSize(480, 320);
     resize(640, 480);
+    consoleDebug();
 }
 
 /*

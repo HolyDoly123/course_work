@@ -6,40 +6,48 @@
 
 class DFA
 {
-    Q_OBJECT
+
 private:
     QString _name;
+    State* _initial_state;
     QSet<State*> _states;
     QSet<Transition*> _transitions;
 
+    bool isDFAValid();
+
 public:
+    static const State *ERROR_STATE;
+
     DFA() = delete;
-    DFA(QString name = tr("Untitled"));
+    DFA(QString name = QObject::tr("Untitled"), State *initial_state = nullptr);
     //DFA(QDataStream / SVG);
-    DFA(const DFA& other); // II. copy constructor
-    DFA& operator=(const DFA& other); // III. copy assignment
-    ~DFA();
+    //DFA(const DFA& other); // II. copy constructor
+    //DFA& operator=(const DFA& other); // III. copy assignment
+    virtual ~DFA() {};
+
 
     void setName(QString name);
-    void setTransitions(QSet<Transition *> transitions);
-    void setStates(QSet<State *> states);
+    void setInitial(State* state);
 
     QString getName() const;
     QSet<State*> getStates() const;
     QSet<Transition *> getTransitions() const;
+    State* getInitial() const;
+    bool isInitial(State* state) const;
 
     bool validate(QString input) const;
-    QVector<QDataStream> buildTransitionTable() const;
+    QVector<QVector<QString>> buildTransitionTable() const;
+    //QVector<QDataStream> minimizeTransitionTable() const;
     QTextStream buildCode() const;
-    void readTransitionTable(const QVector<QDataStream> &transition_table);
+    void readTransitionTable(const QVector<QVector<QString>> &transition_table);
 
-    bool addState(State *state);
-    bool removeState(State *state);
+    void addState(State *state);
+    void removeState(State *state);
 
-    bool addTransition(Transition *transition);
-    bool removeTransition(Transition *transition);
+    void addTransition(Transition *transition);
+    void removeTransition(Transition *transition);
 
-    bool connect(State *state, Transition *transition, bool source = true);
+    bool STConnect(State *state, Transition *transition, bool source = true);
     void unconnect(State *state, Transition *transition, bool source = true);
 
     void clear();
