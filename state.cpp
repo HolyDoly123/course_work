@@ -62,6 +62,11 @@ void State::removeTransition(Transition *transition)
     _state_transitions.remove(transition);
 }
 
+bool operator==(const State& left, const State& right)
+{
+    return left._name == right._name;
+}
+
 void State::clear()
 {
     _name = QString();

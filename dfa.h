@@ -9,17 +9,17 @@ class DFA
 
 private:
     QString _name;
-    State* _initial_state;
-    QSet<State*> _states;
-    QSet<Transition*> _transitions;
+    State *_initial_state;
+    QSet<State> _states;
+   // QSet<Transition> _transitions;
 
     bool isDFAValid();
 
 public:
-    static const State *ERROR_STATE;
+    static const State ERROR_STATE;
 
     DFA() = delete;
-    DFA(QString name = QObject::tr("Untitled"), State *initial_state = nullptr);
+    DFA(QString name = QObject::tr("Untitled"));
     //DFA(QDataStream / SVG);
     //DFA(const DFA& other); // II. copy constructor
     //DFA& operator=(const DFA& other); // III. copy assignment
@@ -27,29 +27,30 @@ public:
 
 
     void setName(QString name);
-    void setInitial(State* state);
+    void setInitial(QString state);
 
     QString getName() const;
-    QSet<State*> getStates() const;
-    QSet<Transition *> getTransitions() const;
     State* getInitial() const;
-    bool isInitial(State* state) const;
 
     bool validate(QString input) const;
     QVector<QVector<QString>> buildTransitionTable() const;
-    //QVector<QDataStream> minimizeTransitionTable() const;
+    //QVector<QDataStream> minimizeTransitionTable();
     QTextStream buildCode() const;
     void readTransitionTable(const QVector<QVector<QString>> &transition_table);
 
-    void addState(State *state);
-    void removeState(State *state);
+    State* addState(QString name);
+    bool removeState(QString name);
 
-    void addTransition(Transition *transition);
-    void removeTransition(Transition *transition);
+    State* getState(QString name);
+/*
+    Transition* getTransition(QString name);
 
-    bool STConnect(State *state, Transition *transition, bool source = true);
-    void unconnect(State *state, Transition *transition, bool source = true);
+    Transition* addTransition(QString name);
+    bool removeTransition(QString name);
 
+    bool connectStateTransition(QString state_name, QString signal_name, bool source = true);
+    void unconnectStateTransition(QString state_name, QString signal_name, bool source = true);
+*/
     void clear();
 };
 #endif // DFA_H

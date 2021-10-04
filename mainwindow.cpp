@@ -1,3 +1,11 @@
+#include "grapharrow.h"
+#include "graphvertex.h"
+#include "graphscene.h"
+#include "graphtext.h"
+
+#include "dfa.h"
+#include "state.h"
+#include "transition.h"
 #include "mainwindow.h"
 //Mainwindow
 //TODO: Central widget (Graphic scene)
@@ -6,15 +14,18 @@
 //TODO: save/load file, isModified()
 
 //Other
-//TODO: Create FA classes
+//TODO: Fully define 3 DFA classes and test em
+//TODO: Set up testing framework
+//TODO: make Arrow, Circle, Text and Scene classes
+//TODO: make Table, Code editor and (maybe) Tree classes
+
 void consoleDebug()
 {
     DFA automat("First");
     qDebug() << automat.getName();
-    QSharedPointer<State> s(new State("S1", "Lol", "int=4;", false));
-    qDebug() << s.get()->getDescription();
-    automat.setInitial(s.get());
 }
+
+
 
 
 
@@ -26,8 +37,13 @@ MainWindow::MainWindow(QWidget *parent)
     createStatusBar();
     createDockWindows();
 
-    QGraphicsView *scene = new QGraphicsView;
-    setCentralWidget(scene);
+
+    scene = new GraphScene(this);
+    scene->setSceneRect(QRectF(0, 0, 5000, 5000));
+
+    view = new QGraphicsView(scene);
+    setCentralWidget(view);
+
 
     readSettings();
     setCurrentFile(QString());
@@ -123,6 +139,7 @@ void MainWindow::createMenus()
     helpMenu->addAction(manualAct);
     helpMenu->addSeparator();
     helpMenu->addAction(aboutAct);
+
 }
 
 void MainWindow::createStatusBar()

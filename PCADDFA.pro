@@ -10,18 +10,25 @@ CONFIG += c++11
 
 SOURCES += \
     dfa.cpp \
+    grapharrow.cpp \
     graphscene.cpp \
+    graphtext.cpp \
+    graphvertex.cpp \
     main.cpp \
     mainwindow.cpp \
     state.cpp \
-    transition.cpp
+    transition.cpp \
 
 HEADERS += \
     dfa.h \
+    grapharrow.h \
     graphscene.h \
+    graphtext.h \
+    graphvertex.h \
     mainwindow.h \
     state.h \
     transition.h
+
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -5,6 +5,8 @@
 #include <algorithm>
 #include "transition.h"
 
+
+
 class State
 {
 
@@ -36,7 +38,21 @@ public:
     bool addTransition(Transition *transition);
     void removeTransition(Transition *transition);
 
+    friend bool operator==(const State& left, const State& right);
+
     void clear();
 };
+
+namespace std
+{
+    template<> struct hash<State>
+    {
+        std::size_t operator()(State const& s) const noexcept
+        {
+            std::size_t h1 = std::hash<std::string>{}(s.getName().toStdString());
+            return h1;
+        }
+    };
+}
 
 #endif // STATE_H

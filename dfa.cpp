@@ -1,18 +1,19 @@
 #include "dfa.h"
 
-DFA::DFA(QString name, State *initial_state)
-    : _name(name), _initial_state(initial_state), _states(QSet<State*>()),
-      _transitions(QSet<Transition*>())
-{}
+DFA::DFA(QString name)
+    : _name(name), _initial_state(nullptr), _states(QSet<State>()),
+      _transitions(QSet<Transition>())
+{
+}
 
 void DFA::setName(QString name)
 {
     _name = name;
 }
 
-void DFA::setInitial(State* state)
+void DFA::setInitial(QString state)
 {
-    _initial_state = state;
+    _initial_state = getState(state);
 }
 
 QString DFA::getName() const
@@ -20,28 +21,33 @@ QString DFA::getName() const
     return _name;
 }
 
-QSet<State*> DFA::getStates() const
+State* DFA::getState(QString name)
 {
-    return _states;
+    QSet<State>::iterator i = std::find_if(_states.begin(), _states.end(),
+                                                 [name](const State value) { return value.getName() == name; });
+    if (i != _states.end())
+    {
+        State* s = const_cast<State*>(&*i);
+        return s;
+    }
+    return nullptr;
 }
 
-QSet<Transition *> DFA::getTransitions() const
+Transition* DFA::getTransition(QString signal)
 {
-    return _transitions;
+    QSet<Transition>::iterator i = std::find_if(_transitions.begin(), _transitions.end(),
+                                                 [signal](const Transition value) { return value.getSignal() == signal; });
+    if (i != _transitions.end())
+    {
+        Transition* s = const_cast<Transition*>(&*i);
+        return s;
+    }
+    return nullptr;
 }
 
 State* DFA::getInitial() const
 {
     return _initial_state;
-}
-
-bool DFA::isInitial(State* state) const
-{
-    if (_initial_state == state)
-    {
-        return true;
-    }
-    return false;
 }
 
 bool DFA::isDFAValid()
@@ -68,49 +74,67 @@ void DFA::readTransitionTable(const QVector<QVector<QString>> &transition_table)
 {
 }
 
-void DFA::addState(State *state)
+State* DFA::addState(QString name)
 {
-    _states.insert(state);
+    if (getState(name) == nullptr)
+    {
+        _states.insert(State(name));
+        return getState(name);
+    }
+    return nullptr;
 }
 
-void DFA::removeState(State *state)
+bool DFA::removeState(QString name)
 {
-    _states.remove(state);
+    return _states.remove(*getState(name));
 }
 
-void DFA::addTransition(Transition *transition)
+Transition* DFA::addTransition(QString signal)
 {
-    _transitions.insert(transition);
+    if (getTransition(signal) == nullptr)
+    {
+        _transitions.insert(Transition(signal));
+        return getTransition(signal);
+    }
+    return nullptr;
 }
 
-void DFA::removeTransition(Transition *transition)
+bool DFA::removeTransition(QString signal)
 {
-    _transitions.remove(transition);
+    _transitions.remove(*getTransition(signal));
 }
 
-bool DFA::STConnect(State *state, Transition *transition, bool source)
+bool DFA::connectStateTransition(QString state, QString signal, bool source)
 {
+    Transition *t = getTransition(signal);
+    State *s = getState(state);
+    if (!s)
+    {
+        return false;
+    }
     if (!source)
     {
-        transition->setDestination(state);
+        t->setDestination(getState(state));
     }
-    else if (state->State::addTransition(transition))
+    else if (s->State::addTransition(t))
     {
-        transition->setSource(state);
+        t->setSource(s);
     }
     return false;
 }
 
-void DFA::unconnect(State *state, Transition *transition, bool source)
+void DFA::unconnectStateTransition(QString state, QString signal, bool source)
 {
+    Transition *t = getTransition(signal);
+    State *s = getState(state);
     if (!source)
     {
-        transition->setDestination(nullptr);
+        t->setDestination(nullptr);
     }
     else
     {
-        transition->setSource(nullptr);
-        state->State::removeTransition(transition);
+        t->setSource(nullptr);
+        s->State::removeTransition(t);
     }
 }
 

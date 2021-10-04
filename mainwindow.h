@@ -3,6 +3,7 @@
 
 #include <QtWidgets>
 #include "dfa.h"
+#include "graphscene.h"
 
 class MainWindow : public QMainWindow
 {
@@ -52,6 +53,8 @@ private:
     QMenu *buildMenu;
     QMenu *helpMenu;
 
+    QMenu *viewContextMenu;
+
     QStatusBar *statusbar;
 
     QDockWidget *graphTreeDock;
@@ -66,6 +69,9 @@ private:
     QAction *buildCodeAct;
     QAction *manualAct;
     QAction *aboutAct;
+
+    QGraphicsView *view;
+    GraphScene *scene;
 
     QString curFile;
 };

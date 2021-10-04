@@ -69,6 +69,11 @@ QString Transition::getOutput() const
     return _output;
 }
 
+bool operator==(const Transition& left, const Transition& right)
+{
+    return left._signal == right._signal;
+}
+
 void Transition::clear()
 {
     _signal = "";
