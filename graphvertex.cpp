@@ -7,10 +7,8 @@
 #include <QPainter>
 
 //! [0]
-GraphVertex::GraphVertex(VertexType diagramType, QMenu *contextMenu,
-                         QGraphicsItem *parent)
+GraphVertex::GraphVertex(VertexType diagramType, QGraphicsItem *parent)
     : QGraphicsPolygonItem(parent), myDiagramType(diagramType)
-    , myContextMenu(contextMenu)
 {
     QPainterPath path;
     switch (myDiagramType) {
@@ -82,18 +80,7 @@ QPixmap GraphVertex::image() const
 
     return pixmap;
 }
-//! [4]
 
-//! [5]
-void GraphVertex::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
-{
-    scene()->clearSelection();
-    setSelected(true);
-    myContextMenu->exec(event->screenPos());
-}
-//! [5]
-
-//! [6]
 QVariant GraphVertex::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     if (change == QGraphicsItem::ItemPositionChange) {

@@ -16,7 +16,7 @@ private:
 
 public:
     Transition() = delete;
-    Transition(QString _name, QString signal, QString description = QObject::tr("No description"),
+    Transition(QString _name, QString signal = "1", QString description = QObject::tr("No description"),
                State *source = nullptr, State *destination = nullptr, QString output = nullptr);
  //   Transition(const Transition& other); // II. copy constructor
  //   Transition& operator=(const Transition& other); // III. copy assignment
@@ -28,6 +28,7 @@ public:
     void setDescription(QString description);
     void setOutput(QString output);
 
+    QString getName() const;
     State *getSource() const;
     State *getDestination() const;
     QString getSignal() const;
@@ -45,7 +46,7 @@ namespace std
     {
         std::size_t operator()(Transition const& s) const noexcept
         {
-            std::size_t h1 = std::hash<std::string>{}(s.getSignal().toStdString());
+            std::size_t h1 = std::hash<std::string>{}(s.getName().toStdString());
             return h1;
         }
     };

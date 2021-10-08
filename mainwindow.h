@@ -15,12 +15,7 @@ public:
     void loadFile(const QString &fileName);
 
     ~MainWindow();
-/*
-protected:
-#ifndef QT_NO_CONTEXTMENU
-    void contextMenuEvent(QContextMenuEvent *event) override;
-#endif // QT_NO_CONTEXTMENU
-*/
+
 protected:
     void closeEvent(QCloseEvent *event) override;
 

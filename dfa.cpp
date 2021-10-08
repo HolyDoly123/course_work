@@ -86,35 +86,48 @@ State* DFA::addState(QString name)
 
 bool DFA::removeState(QString name)
 {
+    for(auto& e : _transitions)
+    {
+        if(e.getDestination()->getName() == name)
+        {
+            unconnectStateTransition(name, e.getName(), false);
+        }
+        else if(e.getSource()->getName() == name)
+        {
+            unconnectStateTransition(name, e.getName(), true);
+        }
+    }
     return _states.remove(*getState(name));
 }
 
-Transition* DFA::addTransition(QString signal)
+Transition* DFA::addTransition(QString name)
 {
-    if (getTransition(signal) == nullptr)
+    if (getTransition(name) == nullptr)
     {
-        _transitions.insert(Transition(signal));
-        return getTransition(signal);
+        _transitions.insert(Transition(name));
+        return getTransition(name);
     }
     return nullptr;
 }
 
-bool DFA::removeTransition(QString signal)
+bool DFA::removeTransition(QString name)
 {
-    _transitions.remove(*getTransition(signal));
+    Transition *t = getTransition(name);
+    unconnectStateTransition(t->getSource()->getName(), name, true);
+    return _transitions.remove(*t);
 }
 
-bool DFA::connectStateTransition(QString state, QString signal, bool source)
+bool DFA::connectStateTransition(QString state_name, QString transition_name, bool source)
 {
-    Transition *t = getTransition(signal);
-    State *s = getState(state);
+    Transition *t = getTransition(transition_name);
+    State *s = getState(state_name);
     if (!s)
     {
         return false;
     }
     if (!source)
     {
-        t->setDestination(getState(state));
+        t->setDestination(getState(state_name));
     }
     else if (s->State::addTransition(t))
     {
@@ -123,10 +136,10 @@ bool DFA::connectStateTransition(QString state, QString signal, bool source)
     return false;
 }
 
-void DFA::unconnectStateTransition(QString state, QString signal, bool source)
+void DFA::unconnectStateTransition(QString state_name, QString transition_name, bool source)
 {
-    Transition *t = getTransition(signal);
-    State *s = getState(state);
+    Transition *t = getTransition(transition_name);
+    State *s = getState(state_name);
     if (!source)
     {
         t->setDestination(nullptr);

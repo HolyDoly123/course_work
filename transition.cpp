@@ -1,8 +1,9 @@
 #include "transition.h"
 
-Transition::Transition(QString signal, QString description,
+Transition::Transition(QString name, QString signal, QString description,
                        State *source, State *destination, QString output)
-    : _signal(signal), _description(description), _source(source), _destination(destination), _output(output)
+    : _name(name), _signal(signal), _description(description), _source(source),
+      _destination(destination), _output(output)
 {}
 /*
 Transition::Transition(const Transition& other)
@@ -71,7 +72,12 @@ QString Transition::getOutput() const
 
 bool operator==(const Transition& left, const Transition& right)
 {
-    return left._signal == right._signal;
+    return left._name == right._name;
+}
+
+QString Transition::getName() const
+{
+    return _name;
 }
 
 void Transition::clear()

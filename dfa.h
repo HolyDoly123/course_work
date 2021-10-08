@@ -11,7 +11,7 @@ private:
     QString _name;
     State *_initial_state;
     QSet<State> _states;
-   // QSet<Transition> _transitions;
+    QSet<Transition> _transitions;
 
     bool isDFAValid();
 
@@ -42,15 +42,14 @@ public:
     bool removeState(QString name);
 
     State* getState(QString name);
-/*
     Transition* getTransition(QString name);
 
     Transition* addTransition(QString name);
     bool removeTransition(QString name);
 
-    bool connectStateTransition(QString state_name, QString signal_name, bool source = true);
-    void unconnectStateTransition(QString state_name, QString signal_name, bool source = true);
-*/
+    bool connectStateTransition(QString state_name, QString transition_name, bool source = true);
+    void unconnectStateTransition(QString state_name, QString transition_name, bool source = true);
+
     void clear();
 };
 #endif // DFA_H

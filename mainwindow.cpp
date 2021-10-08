@@ -14,15 +14,14 @@
 //TODO: save/load file, isModified()
 
 //Other
-//TODO: Fully define 3 DFA classes and test em
-//TODO: Set up testing framework
-//TODO: make Arrow, Circle, Text and Scene classes
+//TODO: Test dfa classes
+//TODO: customize Arrow, Circle, Text and Scene classes
 //TODO: make Table, Code editor and (maybe) Tree classes
 
 void consoleDebug()
 {
-    DFA automat("First");
-    qDebug() << automat.getName();
+
+    //qDebug() << automat.getName();
 }
 
 
@@ -44,7 +43,6 @@ MainWindow::MainWindow(QWidget *parent)
     view = new QGraphicsView(scene);
     setCentralWidget(view);
 
-
     readSettings();
     setCurrentFile(QString());
     setWindowTitle(tr("PCADDFA"));
@@ -52,18 +50,6 @@ MainWindow::MainWindow(QWidget *parent)
     resize(640, 480);
     consoleDebug();
 }
-
-/*
-#ifndef QT_NO_CONTEXTMENU
-void MainWindow::contextMenuEvent(QContextMenuEvent *event)
-{
-    QMenu menu(this);
-    menu.addAction(newAct);
-    menu.addAction(openAct);
-    menu.exec(event->globalPos());
-}
-#endif // QT_NO_CONTEXTMENU
-*/
 
 void MainWindow::createActions()
 {

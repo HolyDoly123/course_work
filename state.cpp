@@ -69,7 +69,6 @@ bool operator==(const State& left, const State& right)
 
 void State::clear()
 {
-    _name = QString();
     _description = QObject::tr("No description");
     _state_variables = nullptr;
     _final = false;
