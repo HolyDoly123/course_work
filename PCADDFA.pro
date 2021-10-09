@@ -12,7 +12,6 @@ SOURCES += \
     dfa.cpp \
     grapharrow.cpp \
     graphscene.cpp \
-    graphtext.cpp \
     graphvertex.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -23,7 +22,6 @@ HEADERS += \
     dfa.h \
     grapharrow.h \
     graphscene.h \
-    graphtext.h \
     graphvertex.h \
     mainwindow.h \
     state.h \

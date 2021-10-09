@@ -1,7 +1,6 @@
 #include "grapharrow.h"
 #include "graphvertex.h"
 #include "graphscene.h"
-#include "graphtext.h"
 
 #include "dfa.h"
 #include "state.h"
@@ -177,7 +176,10 @@ bool MainWindow::saveAs()
 
 void MainWindow::preferences()
 {
-
+    swidget = new QWidget(this);
+    swidget->setMinimumSize(480, 320);
+    swidget->setWindowFlag(Qt::Window);
+    swidget->show();
 }
 
 void MainWindow::checkInput()

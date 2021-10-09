@@ -15,7 +15,7 @@ private:
     QString _description;
     QString _state_variables;
     bool _final;
-    QSet<Transition *> _state_transitions;
+    QSet<Transition> _state_transitions;
 
 public:
     State() = delete;
@@ -34,9 +34,14 @@ public:
     QString getDescription() const;
     bool isFinal() const;
     QString getStateVariables() const;
+    const QSet<Transition> &getStateTransitions() const { return _state_transitions;};
 
-    bool addTransition(Transition *transition);
-    void removeTransition(Transition *transition);
+    Transition* addTransition(QString signal);
+    void removeTransition(QString signal);
+
+    Transition* connectTo(State *state, QString signal);
+
+    Transition* getTransition(QString signal);
 
     friend bool operator==(const State& left, const State& right);
 

@@ -6,7 +6,7 @@
 #include <QMenu>
 
 
-//TODO: arrow move, arc, connect, unconnect
+//TODO: arrow arc(variants), text, adjusting text
 
 GraphScene::GraphScene(QObject *parent)
     : QGraphicsScene(parent)
@@ -14,7 +14,6 @@ GraphScene::GraphScene(QObject *parent)
     myMode = MoveItem;
     myItemType = GraphVertex::Normal;
     line = nullptr;
-    textItem = nullptr;
     arrow = nullptr;
     myVertexColor = Qt::gray;
     myTextColor = Qt::black;
@@ -76,6 +75,7 @@ void GraphScene::deleteVertex()
             GraphVertex *vertex = qgraphicsitem_cast<GraphVertex *>(item);
             vertex->removeArrows();
             this->removeItem(item);
+            this->update();
             delete item;
         }
     }
@@ -90,6 +90,7 @@ void GraphScene::insertArrow()
     arrow->setZValue(-1000.0);
     addItem(arrow);
     arrow->updatePosition();
+    this->update();
 }
 
 void GraphScene::deleteArrow()
@@ -101,6 +102,7 @@ void GraphScene::deleteArrow()
             GraphArrow *arrow = qgraphicsitem_cast<GraphArrow *>(item);
             arrow->startItem()->removeArrow(arrow);
             arrow->endItem()->removeArrow(arrow);
+            this->update();
             delete item;
         }
     }
@@ -115,20 +117,13 @@ void GraphScene::setLineColor(const QColor &color)
         update();
     }
 }
-//! [1]
 
-//! [2]
 void GraphScene::setTextColor(const QColor &color)
 {
     myTextColor = color;
-    if (isItemChange(GraphText::Type)) {
-        GraphText *item = qgraphicsitem_cast<GraphText *>(selectedItems().first());
-        item->setDefaultTextColor(myTextColor);
-    }
-}
-//! [2]
 
-//! [3]
+}
+
 void GraphScene::setVertexColor(const QColor &color)
 {
     myVertexColor = color;
@@ -137,21 +132,11 @@ void GraphScene::setVertexColor(const QColor &color)
         item->setBrush(myVertexColor);
     }
 }
-//! [3]
 
-//! [4]
 void GraphScene::setFont(const QFont &font)
 {
     myFont = font;
-
-    if (isItemChange(GraphText::Type)) {
-        QGraphicsTextItem *item = qgraphicsitem_cast<GraphText *>(selectedItems().first());
-        //At this point the selection can change so the first selected item might not be a DiagramTextItem
-        if (item)
-            item->setFont(myFont);
-    }
 }
-//! [4]
 
 void GraphScene::setMode(Mode mode)
 {
@@ -163,78 +148,47 @@ void GraphScene::setVertexType(GraphVertex::VertexType type)
     myItemType = type;
 }
 
-void GraphScene::editorLostFocus(GraphText *item)
-{
-    QTextCursor cursor = item->textCursor();
-    cursor.clearSelection();
-    item->setTextCursor(cursor);
-
-    if (item->toPlainText().isEmpty()) {
-        removeItem(item);
-        item->deleteLater();
-    }
-}
-
 void GraphScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
     if (mouseEvent->button() != Qt::LeftButton)
         return;
-    switch (myMode) {
-        case InsertLine:
+    if (myMode == InsertLine) {
+        views().first()->setMouseTracking(false);
+        if (!arrow)
         {
-            views().first()->setMouseTracking(false);
-            if (!arrow)
-            {
-                myMode = MoveItem;
-                QGraphicsScene::mousePressEvent(mouseEvent);
-            }
-
-            QList<QGraphicsItem *> startItems = items(arrow->startPoint());
-            if (startItems.count() && startItems.first() == arrow)
-                startItems.removeFirst();
-            QList<QGraphicsItem *> endItems = items(arrow->endPoint());
-            if (endItems.count() && endItems.first() == arrow)
-                endItems.removeFirst();
-
-            if (startItems.count() > 0 && endItems.count() > 0 &&
-                startItems.first()->type() == GraphVertex::Type &&
-                endItems.first()->type() == GraphVertex::Type &&
-                startItems.first() != endItems.first())
-            {
-                GraphVertex *startItem = qgraphicsitem_cast<GraphVertex *>(startItems.first());
-                GraphVertex *endItem = qgraphicsitem_cast<GraphVertex *>(endItems.first());
-
-                startItem->addArrow(arrow);
-                endItem->addArrow(arrow);
-                arrow->setStartItem(startItem);
-                arrow->setEndItem(endItem);
-                arrow->setEndPoint(mouseEvent->scenePos());
-                arrow->update();
-            }
-            else
-            {
-                removeItem(arrow);
-                delete arrow;
-            }
-            arrow = nullptr;
             myMode = MoveItem;
-            break;
+            QGraphicsScene::mousePressEvent(mouseEvent);
         }
-        case InsertText:
-            textItem = new GraphText();
-            textItem->setFont(myFont);
-            textItem->setTextInteractionFlags(Qt::TextEditorInteraction);
-            textItem->setZValue(1000.0);
-            connect(textItem, &GraphText::lostFocus,
-                    this, &GraphScene::editorLostFocus);
-            connect(textItem, &GraphText::selectedChange,
-                    this, &GraphScene::itemSelected);
-            addItem(textItem);
-            textItem->setDefaultTextColor(myTextColor);
-            textItem->setPos(mouseEvent->scenePos());
-            emit textInserted(textItem);
-        default:
-        ;
+
+        QList<QGraphicsItem *> startItems = items(arrow->startPoint());
+        if (startItems.count() && startItems.first() == arrow)
+            startItems.removeFirst();
+        QList<QGraphicsItem *> endItems = items(arrow->endPoint());
+        if (endItems.count() && endItems.first() == arrow)
+            endItems.removeFirst();
+
+        if (startItems.count() > 0 && endItems.count() > 0 &&
+            startItems.first()->type() == GraphVertex::Type &&
+            endItems.first()->type() == GraphVertex::Type &&
+            startItems.first() != endItems.first())
+        {
+            GraphVertex *startItem = qgraphicsitem_cast<GraphVertex *>(startItems.first());
+            GraphVertex *endItem = qgraphicsitem_cast<GraphVertex *>(endItems.first());
+
+            startItem->addArrow(arrow);
+            endItem->addArrow(arrow);
+            arrow->setStartItem(startItem);
+            arrow->setEndItem(endItem);
+            arrow->setEndPoint(mouseEvent->scenePos());
+        }
+        else
+        {
+            removeItem(arrow);
+            delete arrow;
+        }
+        this->update();
+        arrow = nullptr;
+        myMode = MoveItem;
     }
     QGraphicsScene::mousePressEvent(mouseEvent);
 }
@@ -293,8 +247,9 @@ void GraphScene::wheelEvent(QGraphicsSceneWheelEvent *wheelEvent)
             return;
         scale = 0.8;
     }
-    current_scale = current_scale * scale;
+    current_scale = current_scale *scale;
     views().first()->scale(scale, scale);
+    this->update();
 }
 
 bool GraphScene::isItemChange(int type) const

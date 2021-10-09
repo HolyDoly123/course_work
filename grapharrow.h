@@ -33,6 +33,8 @@ public:
     void setStartPoint(QPointF startPoint) { myStartPoint = startPoint; }
     void setEndPoint(QPointF endPoint) { myEndPoint = endPoint; }
 
+    void setText(QString text) { myText = text; }
+
     void updatePosition();
 
 protected:
@@ -49,5 +51,7 @@ private:
 
     QPolygonF arrowHead;
     QColor myColor = Qt::black;
+
+    QString myText;
 };
 #endif // GRAPHARROW_H

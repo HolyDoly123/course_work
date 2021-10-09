@@ -2,7 +2,7 @@
 
 State::State(QString name, QString description, QString state_variables, bool final)
     : _name(name), _description(description), _state_variables(state_variables),
-      _final(final), _state_transitions(QSet<Transition*>())
+      _final(final), _state_transitions(QSet<Transition>())
 {}
 
 void State::setName(QString name)
@@ -45,21 +45,41 @@ QString State::getStateVariables() const
     return _state_variables;
 }
 
-bool State::addTransition(Transition *transition)
+Transition* State::addTransition(QString signal)
 {
-    QString signal = transition->getSignal();
-    if (std::find_if(_state_transitions.begin(), _state_transitions.end(),
-                     [signal](const Transition* value) { return value->getSignal() == signal; }) != _state_transitions.end())
+    if (getTransition(signal) == nullptr)
     {
-        return false;
+        _state_transitions.insert(Transition(signal));
+         getTransition(signal)->setSource(this);
+
+        return getTransition(signal);
     }
-    _state_transitions.insert(transition);
-    return true;
+    return nullptr;
 }
 
-void State::removeTransition(Transition *transition)
+Transition* State::connectTo(State *state, QString signal)
 {
-    _state_transitions.remove(transition);
+    Transition *t = getTransition(signal);
+    t->setDestination(state);
+    return t;
+}
+
+void State::removeTransition(QString signal)
+{
+    Transition *t = getTransition(signal);
+    _state_transitions.remove(*t);
+}
+
+Transition* State::getTransition(QString signal)
+{
+    QSet<Transition>::iterator i = std::find_if(_state_transitions.begin(), _state_transitions.end(),
+                                                 [signal](const Transition value) { return value.getSignal() == signal; });
+    if (i != _state_transitions.end())
+    {
+        Transition* s = const_cast<Transition*>(&*i);
+        return s;
+    }
+    return nullptr;
 }
 
 bool operator==(const State& left, const State& right)

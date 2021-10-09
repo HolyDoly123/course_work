@@ -2,7 +2,6 @@
 #define GRAPHSCENE_H
 
 #include "graphvertex.h"
-#include "graphtext.h"
 
 #include <QGraphicsScene>
 #include <QAction>
@@ -36,7 +35,6 @@ public:
 public slots:
     void setMode(Mode mode);
     void setVertexType(GraphVertex::VertexType type);
-    void editorLostFocus(GraphText *item);
 
 signals:
     void itemInserted(GraphVertex *item);
@@ -62,7 +60,6 @@ private:
     QGraphicsLineItem *line;
     GraphArrow *arrow;
     QFont myFont;
-    GraphText *textItem;
     QColor myTextColor;
     QColor myVertexColor;
     QColor myLineColor;

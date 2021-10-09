@@ -69,5 +69,7 @@ private:
     GraphScene *scene;
 
     QString curFile;
+
+    QWidget *swidget;
 };
 #endif // MAINWINDOW_H

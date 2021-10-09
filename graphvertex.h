@@ -4,6 +4,7 @@
 #include <QGraphicsPixmapItem>
 #include <QList>
 #include <QAction>
+#include "state.h"
 
 class GraphArrow;
 
@@ -18,6 +19,8 @@ public:
     void removeArrow(GraphArrow *arrow);
     void removeArrows();
 
+    void setText(const QString &text);
+
     VertexType diagramType() const { return myDiagramType; }
     QPolygonF polygon() const { return myPolygon; }
     void addArrow(GraphArrow *arrow);
@@ -27,10 +30,13 @@ public:
 
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
+               QWidget *widget = nullptr) override;
 
 private:
     VertexType myDiagramType;
     QPolygonF myPolygon;
     QList<GraphArrow *> arrows;
+    State *state;
 };
 #endif // GRAPHVERTEX_H

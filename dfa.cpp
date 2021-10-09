@@ -1,8 +1,7 @@
 #include "dfa.h"
 
 DFA::DFA(QString name)
-    : _name(name), _initial_state(nullptr), _states(QSet<State>()),
-      _transitions(QSet<Transition>())
+    : _name(name), _initial_state(nullptr), _states(QSet<State>())
 {
 }
 
@@ -28,18 +27,6 @@ State* DFA::getState(QString name)
     if (i != _states.end())
     {
         State* s = const_cast<State*>(&*i);
-        return s;
-    }
-    return nullptr;
-}
-
-Transition* DFA::getTransition(QString signal)
-{
-    QSet<Transition>::iterator i = std::find_if(_transitions.begin(), _transitions.end(),
-                                                 [signal](const Transition value) { return value.getSignal() == signal; });
-    if (i != _transitions.end())
-    {
-        Transition* s = const_cast<Transition*>(&*i);
         return s;
     }
     return nullptr;
@@ -86,69 +73,18 @@ State* DFA::addState(QString name)
 
 bool DFA::removeState(QString name)
 {
-    for(auto& e : _transitions)
+    for(const State& e : _states)
     {
-        if(e.getDestination()->getName() == name)
+        for(const Transition& t : e.getStateTransitions())
         {
-            unconnectStateTransition(name, e.getName(), false);
-        }
-        else if(e.getSource()->getName() == name)
-        {
-            unconnectStateTransition(name, e.getName(), true);
+            if(*t.getDestination() == e)
+            {
+                State *s = getState(e.getName());
+                s->removeTransition(t.getSignal());
+            }
         }
     }
     return _states.remove(*getState(name));
-}
-
-Transition* DFA::addTransition(QString name)
-{
-    if (getTransition(name) == nullptr)
-    {
-        _transitions.insert(Transition(name));
-        return getTransition(name);
-    }
-    return nullptr;
-}
-
-bool DFA::removeTransition(QString name)
-{
-    Transition *t = getTransition(name);
-    unconnectStateTransition(t->getSource()->getName(), name, true);
-    return _transitions.remove(*t);
-}
-
-bool DFA::connectStateTransition(QString state_name, QString transition_name, bool source)
-{
-    Transition *t = getTransition(transition_name);
-    State *s = getState(state_name);
-    if (!s)
-    {
-        return false;
-    }
-    if (!source)
-    {
-        t->setDestination(getState(state_name));
-    }
-    else if (s->State::addTransition(t))
-    {
-        t->setSource(s);
-    }
-    return false;
-}
-
-void DFA::unconnectStateTransition(QString state_name, QString transition_name, bool source)
-{
-    Transition *t = getTransition(transition_name);
-    State *s = getState(state_name);
-    if (!source)
-    {
-        t->setDestination(nullptr);
-    }
-    else
-    {
-        t->setSource(nullptr);
-        s->State::removeTransition(t);
-    }
 }
 
 void DFA::clear()
@@ -156,5 +92,4 @@ void DFA::clear()
     _name = QObject::tr("Untitled");
     _initial_state = nullptr;
     _states.clear();
-    _transitions.clear();
 }

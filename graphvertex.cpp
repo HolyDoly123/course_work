@@ -11,6 +11,8 @@ GraphVertex::GraphVertex(VertexType diagramType, QGraphicsItem *parent)
     : QGraphicsPolygonItem(parent), myDiagramType(diagramType)
 {
     QPainterPath path;
+    state = new State("S1");
+
     switch (myDiagramType) {
         case Normal:
             path.moveTo(200, 50);
@@ -89,4 +91,12 @@ QVariant GraphVertex::itemChange(GraphicsItemChange change, const QVariant &valu
     }
 
     return value;
+}
+
+void GraphVertex::paint(QPainter *painter, const QStyleOptionGraphicsItem *s,
+                  QWidget *w)
+{
+    QGraphicsPolygonItem::paint(painter, s, w);
+
+    painter->drawText(QPointF(100, 25), state->getName());
 }
