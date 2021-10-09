@@ -54,8 +54,6 @@ private:
     bool isItemChange(int type) const;
     void createActions();
     void createContextMenus();
-    void connectVertexArrow(GraphVertex *vertex, GraphArrow *arrow);
-    void unconnectVertexArrow(GraphVertex *vertex, GraphArrow *arrow);
 
     GraphVertex::VertexType myItemType;
     Mode myMode;

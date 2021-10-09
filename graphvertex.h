@@ -17,7 +17,7 @@ public:
 
     void removeArrow(GraphArrow *arrow);
     void removeArrows();
-    QList<GraphArrow *> getArrows() const { return arrows; }
+
     VertexType diagramType() const { return myDiagramType; }
     QPolygonF polygon() const { return myPolygon; }
     void addArrow(GraphArrow *arrow);

@@ -10,7 +10,6 @@ GraphArrow::GraphArrow(GraphVertex *startItem, GraphVertex *endItem, QGraphicsIt
     : QGraphicsLineItem(parent), myStartItem(startItem), myEndItem(endItem)
 {
     setFlag(QGraphicsItem::ItemIsSelectable, true);
-    setFlag(QGraphicsItem::ItemIsMovable, true);
     setPen(QPen(myColor, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 }
 
@@ -20,7 +19,6 @@ GraphArrow::GraphArrow(QPointF startPoint, QPointF endPoint, QGraphicsItem *pare
     myStartItem = nullptr;
     myEndItem = nullptr;
     setFlag(QGraphicsItem::ItemIsSelectable, true);
-    setFlag(QGraphicsItem::ItemIsMovable, true);
     setPen(QPen(myColor, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 }
 
@@ -61,34 +59,16 @@ void GraphArrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
     painter->setPen(myPen);
     painter->setBrush(myColor);
     QLineF centerLine(myStartPoint, myEndPoint);
-    /*if (myStartItem && myEndItem)
+    QPainterPath path;
+    if (myStartItem && myEndItem)
     {
-        QLineF centerLine(myStartItem->pos(), myEndItem->pos());
+        centerLine.setP2(myEndItem->pos()+myEndItem->boundingRect().center());
+        centerLine.setP1(myStartItem->pos()+myStartItem->boundingRect().center());
         QPolygonF endPolygon = myEndItem->polygon();
-        QPointF p2 = endPolygon.first() + myEndItem->pos();
+        QPointF p1 = endPolygon.first() + myEndItem->pos();
         QPointF intersectPoint;
         for (int i = 1; i < endPolygon.count(); ++i) {
-            QPointF p1 = endPolygon.at(i) + myEndItem->pos();
-            QLineF polyLine = QLineF(p1, p2);
-            QLineF::IntersectionType intersectionType =
-                polyLine.intersects(centerLine, &intersectPoint);
-            if (intersectionType == QLineF::BoundedIntersection)
-                break;
-            p2 = p1;
-        }
-
-        setLine(QLineF(myStartItem->pos() +myStartItem->boundingRect().center(), intersectPoint));
-    }*/
-    if (myStartItem)
-    {
-        /*myStartPoint = myStartItem->pos();
-        centerLine.setP1(myStartPoint);
-        QPolygonF startPolygon = myStartItem->polygon();
-        QPointF p1 = startPolygon.first() + myStartItem->pos();
-        QPointF intersectPoint;
-        for (int i = 1; i < startPolygon.count(); ++i) {
-            QPointF p2 = startPolygon.at(i) + myStartItem->pos();
-            qDebug() << p2;
+            QPointF p2 = endPolygon.at(i) + myEndItem->pos();
             QLineF polyLine = QLineF(p1, p2);
             QLineF::IntersectionType intersectionType =
                 polyLine.intersects(centerLine, &intersectPoint);
@@ -96,40 +76,31 @@ void GraphArrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
                 break;
             p1 = p2;
         }
-        myStartPoint = p1;*/
-        QPointF min = myStartItem->pos()+myStartItem->boundingRect().center();// myStartItem->polygon().first() + myStartItem->pos();
-        qreal min_dist = (myStartPoint.x()-myEndPoint.x()) * (myStartPoint.x()-myEndPoint.x()) + (myStartPoint.y()-myEndPoint.y()) * (myStartPoint.y()-myEndPoint.y());
-        for (auto p1 : myStartItem->polygon())
+        myStartPoint = myStartItem->pos()+myStartItem->boundingRect().center();
+        myEndPoint = intersectPoint;
+        centerLine.setP2(intersectPoint);
+        centerLine.setP1(myStartPoint);
+
+        painter->setBrush(Qt::white);
+        path.moveTo(centerLine.p1());
+        path.setFillRule(Qt::WindingFill);
+
+        if (myStartItem->pos().x() < myEndItem->pos().x())
         {
-            p1 += myStartItem->pos();
-            qreal dist = (p1.x()-myEndPoint.x()) * (p1.x()-myEndPoint.x()) + (p1.y()-myEndPoint.y()) * (p1.y()-myEndPoint.y());
-            if (dist < min_dist)
-            {
-                min = p1;
-                min_dist = dist;
-            }
+            path.cubicTo(centerLine.p1()+QPointF(0,50),centerLine.center()+QPointF(0,200), centerLine.p2());
         }
-        myStartPoint = min;
+        else
+        {
+            path.cubicTo(centerLine.p1()-QPointF(0,50),centerLine.center()-QPointF(0,200), centerLine.p2());
+        }
+        painter->drawPath(path);
     }
-    if (myEndItem)
+    else
     {
-        QPointF min = myEndItem->pos()+myEndItem->boundingRect().center();// myStartItem->polygon().first() + myStartItem->pos();
-        qreal min_dist = (myEndPoint.x()-myStartPoint.x()) * (myEndPoint.x()-myStartPoint.x()) + (myEndPoint.y()-myStartPoint.y()) * (myEndPoint.y()-myStartPoint.y());
-        for (auto p1 : myEndItem->polygon())
-        {
-            p1 += myEndItem->pos();
-            qreal dist = (p1.x()-myStartPoint.x()) * (p1.x()-myStartPoint.x()) + (p1.y()-myStartPoint.y()) * (p1.y()-myStartPoint.y());
-            if (dist < min_dist)
-            {
-                min = p1;
-                min_dist = dist;
-            }
-        }
-        myEndPoint = min;
+        setLine(centerLine);
+        painter->drawLine(line());
     }
-    else setLine(centerLine);
-    //centerLine.setP1(myStartPoint);
-    //centerLine.setP2(myEndPoint);
+
 
     double angle = std::atan2(-line().dy(), line().dx());
 
@@ -140,15 +111,25 @@ void GraphArrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
 
     arrowHead.clear();
     arrowHead << line().p2() << arrowP1 << arrowP2;
-//! [6] //! [7]
-    painter->drawLine(line());
-    painter->drawPolygon(arrowHead);
+
+    painter->setPen(QPen(Qt::blue, 10));
+    painter->setBrush(Qt::blue);
+    painter->drawEllipse(myEndPoint, 10, 10);
+    painter->setBrush(myColor);
+    //painter->drawPolygon(arrowHead);
     if (isSelected()) {
-        painter->setPen(QPen(myColor, 2, Qt::DashLine));
-        QLineF myLine = line();
+
+        painter->setPen(QPen(Qt::darkBlue, 1, Qt::DashLine));
+        /*QLineF myLine = line();
         myLine.translate(0, 4.0);
         painter->drawLine(myLine);
         myLine.translate(0,-8.0);
-        painter->drawLine(myLine);
+        painter->drawLine(myLine);*/
+        painter->setBrush(Qt::white);
+        QPainterPath myPath = path;
+        myPath.translate(0, 4.0);
+        painter->drawPath(myPath);
+        myPath.translate(0,-8.0);
+        painter->drawPath(myPath);
     }
 }

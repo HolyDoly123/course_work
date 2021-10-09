@@ -6,7 +6,8 @@
 #include <QMenu>
 
 
-//TODO: arrow paint, arrow delete, arrow press event
+//TODO: arrow move, arc, connect, unconnect
+
 GraphScene::GraphScene(QObject *parent)
     : QGraphicsScene(parent)
 {
@@ -14,6 +15,7 @@ GraphScene::GraphScene(QObject *parent)
     myItemType = GraphVertex::Normal;
     line = nullptr;
     textItem = nullptr;
+    arrow = nullptr;
     myVertexColor = Qt::gray;
     myTextColor = Qt::black;
     myLineColor = Qt::black;
@@ -45,8 +47,6 @@ void GraphScene::createContextMenus()
 {
     myItemMenu = new QMenu;
     myItemMenu->addAction(insertVertexAct);
-    myItemMenu->addSeparator();
-    myItemMenu->addAction(insertArrowAct);
 
     vertexContextMenu = new QMenu;
     vertexContextMenu->addAction(deleteVertexAct);
@@ -55,16 +55,6 @@ void GraphScene::createContextMenus()
 
     arrowContextMenu = new QMenu;
     arrowContextMenu->addAction(deleteArrowAct);
-}
-
-void GraphScene::connectVertexArrow(GraphVertex *vertex, GraphArrow *arrow)
-{
-
-}
-
-void GraphScene::unconnectVertexArrow(GraphVertex *vertex, GraphArrow *arrow)
-{
-
 }
 
 void GraphScene::insertVertex()
@@ -84,17 +74,7 @@ void GraphScene::deleteVertex()
     for (QGraphicsItem *item : qAsConst(selectedItems)) {
         if (item->type() == GraphVertex::Type){
             GraphVertex *vertex = qgraphicsitem_cast<GraphVertex *>(item);
-            for(GraphArrow* arrow : vertex->getArrows())
-            {
-                if(arrow->startItem() == vertex)
-                {
-                    arrow->setStartItem(nullptr);
-                }
-                if(arrow->endItem() == vertex)
-                {
-                    arrow->setEndItem(nullptr);
-                }
-            }
+            vertex->removeArrows();
             this->removeItem(item);
             delete item;
         }
@@ -107,7 +87,7 @@ void GraphScene::insertArrow()
     views().first()->setMouseTracking(true);
     arrow = new GraphArrow(insertPos, insertPos);
     arrow->setColor(myLineColor);
-    arrow->setZValue(1000.0);
+    arrow->setZValue(-1000.0);
     addItem(arrow);
     arrow->updatePosition();
 }
@@ -119,8 +99,8 @@ void GraphScene::deleteArrow()
         if (item->type() == GraphArrow::Type) {
             this->removeItem(item);
             GraphArrow *arrow = qgraphicsitem_cast<GraphArrow *>(item);
-            if(arrow->startItem()) arrow->startItem()->removeArrow(arrow);
-            if(arrow->endItem()) arrow->endItem()->removeArrow(arrow);
+            arrow->startItem()->removeArrow(arrow);
+            arrow->endItem()->removeArrow(arrow);
             delete item;
         }
     }
@@ -228,8 +208,15 @@ void GraphScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 endItem->addArrow(arrow);
                 arrow->setStartItem(startItem);
                 arrow->setEndItem(endItem);
+                arrow->setEndPoint(mouseEvent->scenePos());
+                arrow->update();
             }
-            arrow->setEndPoint(mouseEvent->scenePos());
+            else
+            {
+                removeItem(arrow);
+                delete arrow;
+            }
+            arrow = nullptr;
             myMode = MoveItem;
             break;
         }
@@ -251,9 +238,7 @@ void GraphScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
     }
     QGraphicsScene::mousePressEvent(mouseEvent);
 }
-//! [9]
 
-//! [10]
 void GraphScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
     if (myMode == InsertLine && arrow != nullptr) {
@@ -264,9 +249,7 @@ void GraphScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
         QGraphicsScene::mouseMoveEvent(mouseEvent);
     }
 }
-//! [10]
 
-//! [11]
 void GraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
     QGraphicsScene::mouseReleaseEvent(mouseEvent);
