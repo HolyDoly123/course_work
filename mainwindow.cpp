@@ -7,25 +7,13 @@
 #include "transition.h"
 #include "mainwindow.h"
 //Mainwindow
-//TODO: Central widget (Graphic scene)
-//TODO: Dock window (graph tree)
-//TODO: preferencies, check input, build table/code
+//TODO: preferencies, table minimize/save, code save
 //TODO: save/load file, isModified()
-
+//Graphic scene
+//TODO: self transition, embbed dialogs, style
 //Other
-//TODO: Test dfa classes
-//TODO: customize Arrow, Circle, Text and Scene classes
-//TODO: make Table, Code editor and (maybe) Tree classes
-
-void consoleDebug()
-{
-
-    //qDebug() << automat.getName();
-}
-
-
-
-
+//TODO: Test all classes
+//TODO:  Clear bugs
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -35,9 +23,12 @@ MainWindow::MainWindow(QWidget *parent)
     createStatusBar();
     createDockWindows();
 
-
-    scene = new GraphScene(this);
+    scene = new GraphScene(&myDfa ,this);
     scene->setSceneRect(QRectF(0, 0, 5000, 5000));
+
+    inputEdit = new QLineEdit(this);
+    inputEdit->setWindowFlag(Qt::Window);
+    connect(inputEdit, &QLineEdit::editingFinished, this, &MainWindow::validateInput);
 
     view = new QGraphicsView(scene);
     setCentralWidget(view);
@@ -47,7 +38,6 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(tr("PCADDFA"));
     setMinimumSize(480, 320);
     resize(640, 480);
-    consoleDebug();
 }
 
 void MainWindow::createActions()
@@ -143,6 +133,7 @@ void MainWindow::createDockWindows()
     graphTreeDock->setWidget(placeholder);
     graphTreeDock->setMaximumWidth(this->width()*0.2);
     addDockWidget(Qt::RightDockWidgetArea, graphTreeDock);
+    graphTreeDock->setVisible(false);
 }
 
 void MainWindow::newFile()
@@ -184,17 +175,65 @@ void MainWindow::preferences()
 
 void MainWindow::checkInput()
 {
+    QString info = myDfa.isDFAValid();
+    if(info == "OK")
+    {
+        inputEdit->show();
+        inputEdit->setText("Input signals in string with | separator");
+    }
+    else
+    {
+        QMessageBox::warning(this, tr("DFA Error"),
+                                      info);
+    }
+}
 
+void MainWindow::validateInput()
+{
+    inputEdit->hide();
+    QMessageBox::information(this, tr("Validation results"),
+                                  myDfa.validate(inputEdit->text()));
 }
 
 void MainWindow::buildTable()
 {
-
+    QString info = myDfa.isDFAValid();
+    if(info == "OK")
+    {
+        tableWindow = new DfaTable(&myDfa, this);
+        tableWindow->setMinimumSize(480, 320);
+        tableWindow->setWindowFlag(Qt::Window);
+        tableWindow->show();
+    }
+    else
+    {
+        QMessageBox::warning(this, tr("DFA Error"),
+                                      info);
+    }
 }
 
 void MainWindow::buildCode()
 {
+    QString info = myDfa.isDFAValid();
+    if(info == "OK")
+    {
+        codeEditor = new CodeEditor(this);
+        codeEditor->setMinimumSize(480, 320);
+        codeEditor->setWindowFlag(Qt::Window);
+        connect(codeEditor, &CodeEditor::textChanged, this, &MainWindow::saveCode);
+        codeEditor->show();
+    }
+    else
+    {
+        QMessageBox::warning(this, tr("DFA Error"),
+                                      info);
+    }
+}
 
+void MainWindow::saveCode()
+{
+    QMessageBox::warning(this, tr("Save code"),
+                                  "Do you want save code?");
 }
 
 void MainWindow::manual()

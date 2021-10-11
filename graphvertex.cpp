@@ -6,13 +6,12 @@
 #include <QMenu>
 #include <QPainter>
 
-//! [0]
 GraphVertex::GraphVertex(VertexType diagramType, QGraphicsItem *parent)
     : QGraphicsPolygonItem(parent), myDiagramType(diagramType)
 {
     QPainterPath path;
-    state = new State("S1");
-
+    _initial = false;
+    _final = false;
     switch (myDiagramType) {
         case Normal:
             path.moveTo(200, 50);
@@ -39,9 +38,12 @@ GraphVertex::GraphVertex(VertexType diagramType, QGraphicsItem *parent)
     setFlag(QGraphicsItem::ItemIsSelectable, true);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
 }
-//! [0]
 
-//! [1]
+void GraphVertex::setName(const QString &text)
+{
+    name = text;
+}
+
 void GraphVertex::removeArrow(GraphArrow *arrow)
 {
     arrows.removeAll(arrow);
@@ -87,7 +89,7 @@ QVariant GraphVertex::itemChange(GraphicsItemChange change, const QVariant &valu
 {
     if (change == QGraphicsItem::ItemPositionChange) {
         for (GraphArrow *arrow : qAsConst(arrows))
-            arrow->updatePosition();
+            arrow->update();
     }
 
     return value;
@@ -97,6 +99,25 @@ void GraphVertex::paint(QPainter *painter, const QStyleOptionGraphicsItem *s,
                   QWidget *w)
 {
     QGraphicsPolygonItem::paint(painter, s, w);
+    if(_initial)
+    {
+        painter->setBrush(QBrush(Qt::black));
+        painter->drawEllipse(QPointF(25, 50), 10,10);
+        painter->drawLine(25, 50, 50,50);
+    }
+    if(_final)
+    {
+        painter->setBrush(QBrush(Qt::gray));
+        QPainterPath path;
+        path.moveTo(195, 50);
+        path.arcTo(145, 5, 50, 50, 0, 90);
+        path.arcTo(55, 5, 50, 50, 90, 90);
+        path.arcTo(55, 45, 50, 50, 180, 90);
+        path.arcTo(145, 45, 50, 50, 270, 90);
+        path.lineTo(195, 50);
 
-    painter->drawText(QPointF(100, 25), state->getName());
+        painter->drawPath(path);
+    }
+
+    painter->drawText(QPointF(100, 25), name);
 }

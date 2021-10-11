@@ -12,8 +12,6 @@ private:
     State *_initial_state;
     QSet<State> _states;
 
-    bool isDFAValid();
-
 public:
     static const State ERROR_STATE;
 
@@ -24,6 +22,7 @@ public:
     //DFA& operator=(const DFA& other); // III. copy assignment
     virtual ~DFA() {};
 
+    QString isDFAValid();
 
     void setName(QString name);
     void setInitial(QString state);
@@ -31,7 +30,7 @@ public:
     QString getName() const;
     State* getInitial() const;
 
-    bool validate(QString input) const;
+    QString validate(QString input) const;
     QVector<QVector<QString>> buildTransitionTable() const;
     //QVector<QDataStream> minimizeTransitionTable();
     QTextStream buildCode() const;

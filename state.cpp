@@ -1,9 +1,21 @@
 #include "state.h"
 
+quint32 State::num = 1;
+
 State::State(QString name, QString description, QString state_variables, bool final)
-    : _name(name), _description(description), _state_variables(state_variables),
+    : _description(description), _state_variables(state_variables),
       _final(final), _state_transitions(QSet<Transition>())
-{}
+{
+    if (name.isEmpty())
+    {
+        _name = "S" + QString::number(num);
+        num++;
+    }
+    else
+    {
+        _name = name;
+    }
+}
 
 void State::setName(QString name)
 {
@@ -49,10 +61,9 @@ Transition* State::addTransition(QString signal)
 {
     if (getTransition(signal) == nullptr)
     {
-        _state_transitions.insert(Transition(signal));
-         getTransition(signal)->setSource(this);
-
-        return getTransition(signal);
+        Transition* s = const_cast<Transition*>(&*_state_transitions.insert(Transition(signal)));
+        s->setSource(this);
+        return s;
     }
     return nullptr;
 }

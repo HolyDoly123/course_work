@@ -4,6 +4,8 @@
 #include <QtWidgets>
 #include "dfa.h"
 #include "graphscene.h"
+#include "dfatable.h"
+#include "codeeditor.h"
 
 class MainWindow : public QMainWindow
 {
@@ -29,6 +31,9 @@ private slots:
     void buildCode();
     void manual();
     void about();
+    void validateInput();
+
+    void saveCode();
 
 private:
     void createActions();
@@ -67,9 +72,14 @@ private:
 
     QGraphicsView *view;
     GraphScene *scene;
+    DFA myDfa = DFA("Main dfa");;
 
     QString curFile;
 
     QWidget *swidget;
+
+    DfaTable *tableWindow;
+    CodeEditor *codeEditor;
+    QLineEdit *inputEdit;
 };
 #endif // MAINWINDOW_H

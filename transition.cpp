@@ -1,10 +1,23 @@
 #include "transition.h"
 
+quint32 Transition::num = 1;
+
+
 Transition::Transition(QString signal, QString description,
                        State *source, State *destination, QString output)
-    : _signal(signal), _description(description), _source(source),
+    : _description(description), _source(source),
       _destination(destination), _output(output)
-{}
+{
+    if (signal.isEmpty())
+    {
+        _signal = "T" + QString::number(num);
+        num++;
+    }
+    else
+    {
+        _signal = signal;
+    }
+}
 /*
 Transition::Transition(const Transition& other)
     :_signal(other._signal), _description(other._description),

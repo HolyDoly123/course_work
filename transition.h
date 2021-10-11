@@ -7,6 +7,7 @@ QT_FORWARD_DECLARE_CLASS(State);
 class Transition
 {
 private:
+    static quint32 num;
     QString _signal;
     QString _description;
     State *_source;

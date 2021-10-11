@@ -37,19 +37,81 @@ State* DFA::getInitial() const
     return _initial_state;
 }
 
-bool DFA::isDFAValid()
+QString DFA::isDFAValid()
 {
-    return true;
+    if(!_initial_state)
+    {
+        return "No initial state";
+    }
+    for(const auto& s: _states)
+    {
+        if(s.getStateTransitions().isEmpty() && !s.isFinal())
+            return "Transition " + s.getName() + " isnt final and has no transitions!";
+    }
+    return "OK";
 }
 
-bool DFA::validate(QString input) const
+QString DFA::validate(QString input) const
 {
-    return true;
+    QStringList list = input.split(QLatin1Char('|'), Qt::SkipEmptyParts);
+    State *current_state = _initial_state;
+    for (auto & s : list)
+    {
+        bool flag = false;
+        for (auto & t : current_state->getStateTransitions())
+        {
+            if(t.getSignal() == s)
+            {
+                current_state = t.getDestination();
+                flag = true;
+                break;
+            }
+        }
+        if(flag) continue;;
+        return QObject::tr("Invalid: no ") + s + QObject::tr(" transition in ") + current_state->getName();
+    }
+    qDebug() << current_state->getName() << current_state->isFinal();
+    if (current_state->isFinal())
+    {
+        return QObject::tr("Valid");
+    }
+    return QObject::tr("Invalid: state ") + current_state->getName() + QObject::tr(" isnt final!");
 }
 
 QVector<QVector<QString>> DFA::buildTransitionTable() const
 {
-    return QVector<QVector<QString>>();
+    QSet<Transition> header;
+    for(const auto& s: _states)
+    {
+        for(const auto& t : s.getStateTransitions())
+        {
+            header.insert(t);
+        }
+    }
+
+    QVector<QVector<QString>> table;
+    QVector<QString> row;
+    row.push_back("Name | Signal/(Output)");
+    for (const auto& h : header)
+    {
+        row.push_back(h.getSignal());
+    }
+    table.push_back(row);
+    row = QVector<QString>(header.count()+1, "Error");
+    for(const auto& s: _states)
+    {
+        row[0] = s.getName();
+        for(const auto& t : s.getStateTransitions())
+        {
+            if(t.getOutput().isEmpty())
+                row[table[0].indexOf(t.getSignal())] = t.getDestination()->getName();
+            else
+                row[table[0].indexOf(t.getSignal())] = t.getDestination()->getName() + "/" + t.getOutput();
+        }
+        table.push_back(row);
+        row = QVector<QString>(header.count()+1, "Error");
+    }
+    return table;
 }
 
 QTextStream DFA::buildCode() const
@@ -65,26 +127,26 @@ State* DFA::addState(QString name)
 {
     if (getState(name) == nullptr)
     {
-        _states.insert(State(name));
-        return getState(name);
+        return const_cast<State*>(&*_states.insert(State(name)));
     }
     return nullptr;
 }
 
 bool DFA::removeState(QString name)
 {
+    State *to_delete = getState(name);
     for(const State& e : _states)
     {
         for(const Transition& t : e.getStateTransitions())
         {
-            if(*t.getDestination() == e)
+            if(t.getDestination() == to_delete)
             {
                 State *s = getState(e.getName());
                 s->removeTransition(t.getSignal());
             }
         }
     }
-    return _states.remove(*getState(name));
+    return _states.remove(*to_delete);
 }
 
 void DFA::clear()

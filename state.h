@@ -11,6 +11,7 @@ class State
 {
 
 private:
+    static quint32 num;
     QString _name;
     QString _description;
     QString _state_variables;

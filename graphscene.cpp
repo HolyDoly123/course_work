@@ -5,19 +5,24 @@
 #include <QTextCursor>
 #include <QMenu>
 
-
-//TODO: arrow arc(variants), text, adjusting text
-
-GraphScene::GraphScene(QObject *parent)
+GraphScene::GraphScene(DFA *dfa, QObject *parent)
     : QGraphicsScene(parent)
 {
     myMode = MoveItem;
     myItemType = GraphVertex::Normal;
     line = nullptr;
     arrow = nullptr;
+    initialVertex = nullptr;
     myVertexColor = Qt::gray;
     myTextColor = Qt::black;
     myLineColor = Qt::black;
+
+    lineEdit = new QLineEdit;
+    proxy = this->addWidget(lineEdit);
+    proxy->setVisible(false);
+    proxy->setZValue(2000);
+
+    myDfa = dfa;
 
     createActions();
     createContextMenus();
@@ -40,6 +45,26 @@ void GraphScene::createActions()
     deleteArrowAct = new QAction(tr("Delete arrow"), this);
     deleteArrowAct->setStatusTip(tr("Delete arrow"));
     connect(deleteArrowAct, &QAction::triggered, this, &GraphScene::deleteArrow);
+
+    openStateEditAct = new QAction(tr("Set name"), this);
+    openStateEditAct->setStatusTip(tr("Sets states name"));
+    connect(openStateEditAct, &QAction::triggered, this, &GraphScene::openStateEdit);
+
+    openTransitionEditAct = new QAction(tr("Set signal"), this);
+    openTransitionEditAct->setStatusTip(tr("Sets transition's signal"));
+    connect(openTransitionEditAct, &QAction::triggered, this, &GraphScene::openTransitionEdit);
+
+    setInitialVertexAct = new QAction(tr("Set initial"), this);
+    setInitialVertexAct->setStatusTip(tr("Sets state initial"));
+    connect(setInitialVertexAct, &QAction::triggered, this, &GraphScene::setInitialVertex);
+
+    setFinalVertexAct = new QAction(tr("Set/unset final"), this);
+    setFinalVertexAct->setStatusTip(tr("Sets state final"));
+    connect(setFinalVertexAct, &QAction::triggered, this, &GraphScene::setFinalVertex);
+
+    setTransitionOutputAct = new QAction(tr("Set output"), this);
+    setTransitionOutputAct->setStatusTip(tr("Sets transitions output"));
+    connect(setTransitionOutputAct, &QAction::triggered, this, &GraphScene::openOutputEdit);
 }
 
 void GraphScene::createContextMenus()
@@ -47,19 +72,31 @@ void GraphScene::createContextMenus()
     myItemMenu = new QMenu;
     myItemMenu->addAction(insertVertexAct);
 
+
     vertexContextMenu = new QMenu;
-    vertexContextMenu->addAction(deleteVertexAct);
-    vertexContextMenu->addSeparator();
     vertexContextMenu->addAction(insertArrowAct);
+    vertexContextMenu->addAction(openStateEditAct);
+    vertexContextMenu->addSeparator();
+    vertexContextMenu->addAction(setInitialVertexAct);
+    vertexContextMenu->addAction(setFinalVertexAct);
+    vertexContextMenu->addSeparator();
+    vertexContextMenu->addAction(deleteVertexAct);
 
     arrowContextMenu = new QMenu;
+    arrowContextMenu->addAction(openTransitionEditAct);
+    arrowContextMenu->addSeparator();
+    arrowContextMenu->addAction(setTransitionOutputAct);
+    arrowContextMenu->addSeparator();
     arrowContextMenu->addAction(deleteArrowAct);
 }
 
 void GraphScene::insertVertex()
 {
     GraphVertex *item;
+    current_state = myDfa->addState(QString());
     item = new GraphVertex(myItemType);
+    item->setName(current_state->getName());
+
     item->setPen(QPen(myLineColor, 3));
     item->setBrush(myVertexColor);
     addItem(item);
@@ -73,7 +110,12 @@ void GraphScene::deleteVertex()
     for (QGraphicsItem *item : qAsConst(selectedItems)) {
         if (item->type() == GraphVertex::Type){
             GraphVertex *vertex = qgraphicsitem_cast<GraphVertex *>(item);
+            if (vertex == initialVertex)
+            {
+                initialVertex = nullptr;
+            }
             vertex->removeArrows();
+            myDfa->removeState(vertex->getName());
             this->removeItem(item);
             this->update();
             delete item;
@@ -100,12 +142,132 @@ void GraphScene::deleteArrow()
         if (item->type() == GraphArrow::Type) {
             this->removeItem(item);
             GraphArrow *arrow = qgraphicsitem_cast<GraphArrow *>(item);
+            myDfa->getState(arrow->startItem()->getName())->removeTransition(arrow->getSignal());
             arrow->startItem()->removeArrow(arrow);
             arrow->endItem()->removeArrow(arrow);
             this->update();
             delete item;
         }
     }
+}
+
+void  GraphScene::openStateEdit()
+{
+    QList<QGraphicsItem *> selectedItems = this->selectedItems();
+    if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphVertex::Type)
+    {
+        proxy->setVisible(true);
+        proxy->setPos(insertPos);
+        editVertex = qgraphicsitem_cast<GraphVertex *>(selectedItems.first());
+        connect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::changeStateName);
+    }
+}
+
+void  GraphScene::openTransitionEdit()
+{
+    QList<QGraphicsItem *> selectedItems = this->selectedItems();
+    if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphArrow::Type)
+    {
+        proxy->setVisible(true);
+        proxy->setPos(insertPos);
+        editArrow = qgraphicsitem_cast<GraphArrow *>(selectedItems.first());
+        connect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::changeTransitionSignal);
+    }
+}
+
+void  GraphScene::openOutputEdit()
+{
+    QList<QGraphicsItem *> selectedItems = this->selectedItems();
+    if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphArrow::Type)
+    {
+        proxy->setVisible(true);
+        proxy->setPos(insertPos);
+        editArrow = qgraphicsitem_cast<GraphArrow *>(selectedItems.first());
+        connect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::setTransitionOutput);
+    }
+}
+
+void GraphScene::changeStateName()
+{
+    QString text = lineEdit->text();
+    if(!text.isEmpty())
+    {
+        myDfa->getState(editVertex->getName())->setName(text);
+        editVertex->setName(text);
+        editVertex = nullptr;
+        this->update();
+    }
+    disconnect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::changeStateName);
+    proxy->setVisible(false);
+}
+
+void GraphScene::changeTransitionSignal()
+{
+    QString text = lineEdit->text();
+    if(!text.isEmpty())
+    {
+        myDfa->getState(editArrow->startItem()->getName())->getTransition(editArrow->getSignal())->setSignal(text);
+        editArrow->setSignal(text);
+        editArrow = nullptr;
+        this->update();
+    }
+    disconnect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::changeTransitionSignal);
+    proxy->setVisible(false);
+}
+
+void GraphScene::setInitialVertex()
+{
+    QList<QGraphicsItem *> selectedItems = this->selectedItems();
+    if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphVertex::Type)
+    {
+        GraphVertex* gv = qgraphicsitem_cast<GraphVertex *>(selectedItems.first());
+        if (initialVertex == nullptr)
+        {
+            initialVertex = gv;
+            myDfa->setInitial(initialVertex->getName());
+            initialVertex->setInitial(true);
+        }
+        else
+        {
+            initialVertex->setInitial(false);
+            initialVertex = gv;
+            myDfa->setInitial(initialVertex->getName());
+            initialVertex->setInitial(true);
+        }
+    }
+    this->update();
+}
+
+void GraphScene::setFinalVertex()
+{
+    QList<QGraphicsItem *> selectedItems = this->selectedItems();
+    for (QGraphicsItem *item : qAsConst(selectedItems)) {
+        if (item->type() == GraphVertex::Type){
+            GraphVertex* gv = qgraphicsitem_cast<GraphVertex *>(selectedItems.first());
+            if (gv->isFinal())
+            {
+                myDfa->getState(gv->getName())->setFinal(false);
+                gv->setFinal(false);
+            }
+            else
+            {
+                myDfa->getState(gv->getName())->setFinal(true);
+                gv->setFinal(true);
+            }
+        }
+    }
+    this->update();
+}
+
+void GraphScene::setTransitionOutput()
+{
+    QString text = lineEdit->text();
+    myDfa->getState(editArrow->startItem()->getName())->getTransition(editArrow->getSignal())->setOutput(text);
+    editArrow->setOutput(text);
+    editArrow = nullptr;
+    this->update();
+    disconnect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::setTransitionOutput);
+    proxy->setVisible(false);
 }
 
 void GraphScene::setLineColor(const QColor &color)
@@ -180,6 +342,11 @@ void GraphScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
             arrow->setStartItem(startItem);
             arrow->setEndItem(endItem);
             arrow->setEndPoint(mouseEvent->scenePos());
+
+            current_state = myDfa->getState(startItem->getName());
+            Transition *t = current_state ->addTransition(QString());
+            current_state->connectTo(myDfa->getState(endItem->getName()), t->getSignal());
+            arrow->setSignal(t->getSignal());
         }
         else
         {
@@ -214,9 +381,9 @@ void GraphScene::contextMenuEvent(QGraphicsSceneContextMenuEvent *contextMenuEve
     QList<QGraphicsItem *> selected = this->selectedItems();
     if(!selected.empty())
     {
+        insertPos = contextMenuEvent->scenePos();
         if(selected.first()->type() == GraphVertex::Type)
         {
-            insertPos = contextMenuEvent->scenePos();
             vertexContextMenu->exec(contextMenuEvent->screenPos());
             QGraphicsScene::contextMenuEvent(contextMenuEvent);
         }
@@ -249,7 +416,7 @@ void GraphScene::wheelEvent(QGraphicsSceneWheelEvent *wheelEvent)
     }
     current_scale = current_scale *scale;
     views().first()->scale(scale, scale);
-    this->update();
+    views().first()->update();
 }
 
 bool GraphScene::isItemChange(int type) const

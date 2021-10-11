@@ -7,6 +7,10 @@
 #include <QAction>
 #include <QMenu>
 #include <QGraphicsView>
+#include <QLineEdit>
+#include <QGraphicsProxyWidget>
+
+#include "dfa.h"
 
 class GraphScene : public QGraphicsScene
 {
@@ -15,7 +19,7 @@ class GraphScene : public QGraphicsScene
 public:
     enum Mode { InsertVertex, InsertLine, InsertText, MoveItem };
 
-    GraphScene(QObject *parent = nullptr);
+    GraphScene(DFA *dfa, QObject *parent = nullptr);
     ~GraphScene();
     QFont font() const { return myFont; }
     QColor textColor() const { return myTextColor; }
@@ -26,11 +30,6 @@ public:
     void setVertexColor(const QColor &color);
     void setFont(const QFont &font);
 
-
-    void insertVertex();
-    void deleteVertex();
-    void insertArrow();
-    void deleteArrow();
 
 public slots:
     void setMode(Mode mode);
@@ -47,6 +46,23 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *contextMenuEvent) override;
     void wheelEvent(QGraphicsSceneWheelEvent *wheelEvent) override;
+
+private slots:
+    void insertVertex();
+    void deleteVertex();
+    void insertArrow();
+    void deleteArrow();
+
+    void changeStateName();
+    void changeTransitionSignal();
+
+    void openStateEdit();
+    void openTransitionEdit();
+    void openOutputEdit();
+
+    void setInitialVertex();
+    void setFinalVertex();
+    void setTransitionOutput();
 
 private:
     bool isItemChange(int type) const;
@@ -70,13 +86,30 @@ private:
     QMenu *vertexContextMenu;
     QMenu *arrowContextMenu;
 
+    DFA *myDfa;
+
     double current_scale = 1.0;
+    State *current_state;
 
     QAction *insertVertexAct;
     QAction *deleteVertexAct;
 
     QAction *insertArrowAct;
     QAction *deleteArrowAct;
+
+    QAction *openStateEditAct;
+    QAction *openTransitionEditAct;
+
+    QAction *setInitialVertexAct;
+    QAction *setFinalVertexAct;
+
+    QAction *setTransitionOutputAct;
+
+    QLineEdit *lineEdit;
+    QGraphicsProxyWidget *proxy;
+    GraphVertex *editVertex;
+    GraphArrow *editArrow;
+    GraphVertex *initialVertex;
 };
 
 #endif // GRAPHSCENE_H

@@ -5,7 +5,7 @@
 #include <QPen>
 #include <QtMath>
 
-//! [0]
+
 GraphArrow::GraphArrow(GraphVertex *startItem, GraphVertex *endItem, QGraphicsItem *parent)
     : QGraphicsLineItem(parent), myStartItem(startItem), myEndItem(endItem)
 {
@@ -46,6 +46,11 @@ void GraphArrow::updatePosition()
     setLine(QLineF(myStartPoint, myEndPoint));
 }
 
+void GraphArrow::setSignal (const QString &text)
+{
+    signal = text;
+}
+
 void GraphArrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
                   QWidget *)
 {
@@ -57,6 +62,9 @@ void GraphArrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
     QLineF centerLine(myStartPoint, myEndPoint);
     QPainterPath path;
     double angle = std::atan2(-line().dy(), line().dx());
+
+    int k = 1;
+
     if (myStartItem && myEndItem)
     {
         painter->setBrush(Qt::NoBrush);
@@ -79,6 +87,8 @@ void GraphArrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
             centerLine.setP1(myStartPoint);
             path.cubicTo(centerLine.p1()-QPointF(0,50),centerLine.center()-QPointF(0,200), centerLine.p2());
             angle = M_PI + M_PI / 3;
+
+            k = -1;
         }
         painter->drawPath(path);
     }
@@ -101,7 +111,14 @@ void GraphArrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
     painter->setBrush(myColor);
     painter->drawPolygon(arrowHead);
 
-    painter->drawText(centerLine.center()+QPointF(0,50), "1/0");
+    if (output.isEmpty())
+    {
+        painter->drawText(centerLine.center()+ k*QPointF(0,50), signal);
+    }
+    else
+    {
+        painter->drawText(centerLine.center()+ k*QPointF(0,50), signal + "/" + output);
+    }
 
     if (isSelected())
     {

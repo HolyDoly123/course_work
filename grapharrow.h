@@ -3,6 +3,7 @@
 
 
 #include <QGraphicsLineItem>
+#include <transition.h>
 
 class GraphVertex;
 
@@ -15,7 +16,7 @@ public:
           QGraphicsItem *parent = nullptr);
 
     GraphArrow(QPointF startPoint, QPointF endPoint,
-          QGraphicsItem *parent = nullptr);
+               QGraphicsItem *parent = nullptr);
 
     int type() const override { return Type; }
     QRectF boundingRect() const override;
@@ -33,7 +34,9 @@ public:
     void setStartPoint(QPointF startPoint) { myStartPoint = startPoint; }
     void setEndPoint(QPointF endPoint) { myEndPoint = endPoint; }
 
-    void setText(QString text) { myText = text; }
+    void setSignal(const QString &text);
+    const QString & getSignal() const{ return signal;};
+    void setOutput(const QString &text) { output = text; }
 
     void updatePosition();
 
@@ -52,6 +55,7 @@ private:
     QPolygonF arrowHead;
     QColor myColor = Qt::black;
 
-    QString myText;
+    QString signal;
+    QString output = QString();
 };
 #endif // GRAPHARROW_H
