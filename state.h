@@ -11,7 +11,7 @@ class State
 {
 
 private:
-    static quint32 num;
+
     QString _name;
     QString _description;
     QString _state_variables;
@@ -19,6 +19,8 @@ private:
     QSet<Transition> _state_transitions;
 
 public:
+    static quint32 num;
+
     State() = delete;
     State(QString name, QString description = QObject::tr("No description"),
           QString state_variables = nullptr, bool final = false);

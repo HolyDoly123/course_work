@@ -7,13 +7,13 @@
 #include "transition.h"
 #include "mainwindow.h"
 //Mainwindow
-//TODO: preferencies, table minimize/save, code save
-//TODO: save/load file, isModified()
+//TODO: table minimize
+//TODO: save/open file (my, svg), preferencies
 //Graphic scene
-//TODO: self transition, embbed dialogs, style
+//TODO: self transition
 //Other
 //TODO: Test all classes
-//TODO:  Clear bugs
+//TODO:  Clear bugs (Arrow, inputs)
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -25,10 +25,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     scene = new GraphScene(&myDfa ,this);
     scene->setSceneRect(QRectF(0, 0, 5000, 5000));
-
-    inputEdit = new QLineEdit(this);
-    inputEdit->setWindowFlag(Qt::Window);
-    connect(inputEdit, &QLineEdit::editingFinished, this, &MainWindow::validateInput);
 
     view = new QGraphicsView(scene);
     setCentralWidget(view);
@@ -142,6 +138,10 @@ void MainWindow::newFile()
         //clear();
         setCurrentFile(QString());
     }
+    setCurrentFile(QString());
+    scene->clear();
+    myDfa.clear();
+    view->update();
 }
 
 void MainWindow::open()
@@ -178,8 +178,15 @@ void MainWindow::checkInput()
     QString info = myDfa.isDFAValid();
     if(info == "OK")
     {
-        inputEdit->show();
-        inputEdit->setText("Input signals in string with | separator");
+        bool ok;
+        QString text = QInputDialog::getText(this, tr("Check input"),
+                                             tr("Input signals in string with | separator"), QLineEdit::Normal,
+                                             "", &ok);
+        if (ok && !text.isEmpty())
+        {
+            QMessageBox::information(this, tr("Validation results"),
+                                              myDfa.validate(text));
+        }
     }
     else
     {
@@ -188,18 +195,13 @@ void MainWindow::checkInput()
     }
 }
 
-void MainWindow::validateInput()
-{
-    inputEdit->hide();
-    QMessageBox::information(this, tr("Validation results"),
-                                  myDfa.validate(inputEdit->text()));
-}
-
 void MainWindow::buildTable()
 {
     QString info = myDfa.isDFAValid();
     if(info == "OK")
     {
+        myDfa.minimizeTransitionTable();
+
         tableWindow = new DfaTable(&myDfa, this);
         tableWindow->setMinimumSize(480, 320);
         tableWindow->setWindowFlag(Qt::Window);
@@ -218,9 +220,9 @@ void MainWindow::buildCode()
     if(info == "OK")
     {
         codeEditor = new CodeEditor(this);
-        codeEditor->setMinimumSize(480, 320);
+        codeEditor->setMinimumSize(640, 320);
         codeEditor->setWindowFlag(Qt::Window);
-        connect(codeEditor, &CodeEditor::textChanged, this, &MainWindow::saveCode);
+        codeEditor->setPlainText(myDfa.buildCode());
         codeEditor->show();
     }
     else
@@ -228,12 +230,6 @@ void MainWindow::buildCode()
         QMessageBox::warning(this, tr("DFA Error"),
                                       info);
     }
-}
-
-void MainWindow::saveCode()
-{
-    QMessageBox::warning(this, tr("Save code"),
-                                  "Do you want save code?");
 }
 
 void MainWindow::manual()

@@ -25,13 +25,16 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *contextMenuEvent) override;
 
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void highlightCurrentLine();
     void updateLineNumberArea(const QRect &rect, int dy);
+    void saveCode();
 
 private:
+    QAction *saveCodeAct;
     QWidget *lineNumberArea;
 };
 

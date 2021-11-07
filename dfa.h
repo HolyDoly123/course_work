@@ -32,8 +32,8 @@ public:
 
     QString validate(QString input) const;
     QVector<QVector<QString>> buildTransitionTable() const;
-    //QVector<QDataStream> minimizeTransitionTable();
-    QTextStream buildCode() const;
+    QVector<QVector<QString>> minimizeTransitionTable();
+    QString buildCode() const;
     void readTransitionTable(const QVector<QVector<QString>> &transition_table);
 
     State* addState(QString name);

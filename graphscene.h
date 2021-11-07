@@ -34,6 +34,7 @@ public:
 public slots:
     void setMode(Mode mode);
     void setVertexType(GraphVertex::VertexType type);
+    void clear();
 
 signals:
     void itemInserted(GraphVertex *item);

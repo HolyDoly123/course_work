@@ -13,7 +13,7 @@ GraphScene::GraphScene(DFA *dfa, QObject *parent)
     line = nullptr;
     arrow = nullptr;
     initialVertex = nullptr;
-    myVertexColor = Qt::gray;
+    myVertexColor = Qt::cyan;
     myTextColor = Qt::black;
     myLineColor = Qt::black;
 
@@ -21,6 +21,12 @@ GraphScene::GraphScene(DFA *dfa, QObject *parent)
     proxy = this->addWidget(lineEdit);
     proxy->setVisible(false);
     proxy->setZValue(2000);
+
+    for (int x=0; x<=5000; x+=150)
+        this->addLine(x,0,x,5000, QPen(Qt::gray));
+
+    for (int y=0; y<=5000; y+=150)
+        this->addLine(0,y,5000,y, QPen(Qt::gray));
 
     myDfa = dfa;
 
@@ -99,6 +105,7 @@ void GraphScene::insertVertex()
 
     item->setPen(QPen(myLineColor, 3));
     item->setBrush(myVertexColor);
+    item->setZValue(1000);
     addItem(item);
     item->setPos(insertPos);
     emit itemInserted(item);
@@ -129,7 +136,7 @@ void GraphScene::insertArrow()
     views().first()->setMouseTracking(true);
     arrow = new GraphArrow(insertPos, insertPos);
     arrow->setColor(myLineColor);
-    arrow->setZValue(-1000.0);
+    arrow->setZValue(1.0);
     addItem(arrow);
     arrow->updatePosition();
     this->update();
@@ -424,6 +431,16 @@ bool GraphScene::isItemChange(int type) const
     const QList<QGraphicsItem *> items = selectedItems();
     const auto cb = [type](const QGraphicsItem *item) { return item->type() == type; };
     return std::find_if(items.begin(), items.end(), cb) != items.end();
+}
+
+void GraphScene::clear()
+{
+    QGraphicsScene::clear();
+    for (int x=0; x<=5000; x+=150)
+        this->addLine(x,0,x,5000, QPen(Qt::gray));
+
+    for (int y=0; y<=5000; y+=150)
+        this->addLine(0,y,5000,y, QPen(Qt::gray));
 }
 
 GraphScene::~GraphScene()

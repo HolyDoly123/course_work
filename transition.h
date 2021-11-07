@@ -7,7 +7,6 @@ QT_FORWARD_DECLARE_CLASS(State);
 class Transition
 {
 private:
-    static quint32 num;
     QString _signal;
     QString _description;
     State *_source;
@@ -15,6 +14,8 @@ private:
     QString _output;
 
 public:
+    static quint32 num;
+
     Transition() = delete;
     Transition(QString signal, QString description = QObject::tr("No description"),
                State *source = nullptr, State *destination = nullptr, QString output = nullptr);

@@ -4,10 +4,20 @@
 #include <QTextBlock>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QAction>
+#include <QFileDialog>
+#include <QSaveFile>
+#include <QMessageBox>
+#include <QMenu>
 
 CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent)
 {
     lineNumberArea = new LineNumberArea(this);
+
+    saveCodeAct = new QAction(tr("Save code"), this);
+    saveCodeAct->setShortcuts(QKeySequence::Save);
+    saveCodeAct->setStatusTip(tr("Save code"));
+    connect(saveCodeAct, &QAction::triggered, this, &CodeEditor::saveCode);
 
     connect(this, &CodeEditor::blockCountChanged, this, &CodeEditor::updateLineNumberAreaWidth);
     connect(this, &CodeEditor::updateRequest, this, &CodeEditor::updateLineNumberArea);
@@ -15,6 +25,50 @@ CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent)
 
     updateLineNumberAreaWidth(0);
     highlightCurrentLine();
+}
+
+void CodeEditor::contextMenuEvent(QContextMenuEvent *event)
+{
+    QMenu *menu = createStandardContextMenu();
+    menu->addAction(saveCodeAct);
+    menu->exec(event->globalPos());
+    delete menu;
+}
+
+
+void CodeEditor::saveCode()
+{
+    QFileDialog dialog(this, tr("Save code"), "",
+                       tr( "Source C++ code (*.cpp)"));
+    dialog.setWindowModality(Qt::WindowModal);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+    QString fileName = dialog.selectedFiles().first();
+    QSaveFile file(fileName);
+    QString errorMessage;
+    if (file.open(QFile::WriteOnly | QFile::Text))
+    {
+        QTextStream out(&file);
+        out << this->toPlainText();
+        if (!file.commit())
+        {
+            errorMessage = tr("Cannot write file %1:\n%2.")
+                           .arg(QDir::toNativeSeparators(fileName), file.errorString());
+        }
+    } else {
+        errorMessage = tr("Cannot open file %1 for writing:\n%2.")
+                       .arg(QDir::toNativeSeparators(fileName), file.errorString());
+    }
+
+    if (!errorMessage.isEmpty())
+    {
+        QMessageBox::warning(this, tr("Application"), errorMessage);
+    }
+    else
+    {
+        QMessageBox::information(this, tr("Application"), "File saved");
+    }
 }
 
 int CodeEditor::lineNumberAreaWidth()

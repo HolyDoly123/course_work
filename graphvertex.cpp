@@ -48,9 +48,7 @@ void GraphVertex::removeArrow(GraphArrow *arrow)
 {
     arrows.removeAll(arrow);
 }
-//! [1]
 
-//! [2]
 void GraphVertex::removeArrows()
 {
     // need a copy here since removeArrow() will
@@ -63,26 +61,10 @@ void GraphVertex::removeArrows()
         delete arrow;
     }
 }
-//! [2]
 
-//! [3]
 void GraphVertex::addArrow(GraphArrow *arrow)
 {
     arrows.append(arrow);
-}
-//! [3]
-
-//! [4]
-QPixmap GraphVertex::image() const
-{
-    QPixmap pixmap(250, 250);
-    pixmap.fill(Qt::transparent);
-    QPainter painter(&pixmap);
-    painter.setPen(QPen(Qt::black, 8));
-    painter.translate(125, 125);
-    painter.drawPolyline(myPolygon);
-
-    return pixmap;
 }
 
 QVariant GraphVertex::itemChange(GraphicsItemChange change, const QVariant &value)
@@ -103,11 +85,11 @@ void GraphVertex::paint(QPainter *painter, const QStyleOptionGraphicsItem *s,
     {
         painter->setBrush(QBrush(Qt::black));
         painter->drawEllipse(QPointF(25, 50), 10,10);
-        painter->drawLine(25, 50, 50,50);
+        painter->drawLine(25, 50, 50, 50);
     }
     if(_final)
     {
-        painter->setBrush(QBrush(Qt::gray));
+        painter->setBrush(QBrush(Qt::cyan));
         QPainterPath path;
         path.moveTo(195, 50);
         path.arcTo(145, 5, 50, 50, 0, 90);
@@ -117,7 +99,14 @@ void GraphVertex::paint(QPainter *painter, const QStyleOptionGraphicsItem *s,
         path.lineTo(195, 50);
 
         painter->drawPath(path);
+
+        /*
+        painter->drawLine(200, 50, 225,50);
+        painter->setBrush(Qt::NoBrush);
+        painter->drawEllipse(QPointF(225, 50), 10,10);
+        painter->setBrush(QBrush(Qt::black));
+        painter->drawEllipse(QPointF(225, 50), 5, 5);*/
     }
 
-    painter->drawText(QPointF(100, 25), name);
+    painter->drawText(QPointF(110-name.size()*1.5, 25), name);
 }

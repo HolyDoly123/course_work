@@ -12,6 +12,9 @@ class DfaTable : public QWidget
 public:
     DfaTable(DFA *dfa, QWidget *parent = nullptr);
 
+private slots:
+    void saveTable();
+
 private:
     void fillTable();
 

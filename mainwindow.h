@@ -31,9 +31,7 @@ private slots:
     void buildCode();
     void manual();
     void about();
-    void validateInput();
 
-    void saveCode();
 
 private:
     void createActions();
@@ -80,6 +78,5 @@ private:
 
     DfaTable *tableWindow;
     CodeEditor *codeEditor;
-    QLineEdit *inputEdit;
 };
 #endif // MAINWINDOW_H

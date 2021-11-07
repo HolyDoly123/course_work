@@ -29,7 +29,6 @@ public:
     VertexType diagramType() const { return myDiagramType; }
     QPolygonF polygon() const { return myPolygon; }
     void addArrow(GraphArrow *arrow);
-    QPixmap image() const;
     int type() const override { return Type; }
     void deleteVertex();
 

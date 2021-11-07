@@ -10,7 +10,7 @@ Transition::Transition(QString signal, QString description,
 {
     if (signal.isEmpty())
     {
-        _signal = "T" + QString::number(num);
+        _signal = QString((char)(num + 96));
         num++;
     }
     else

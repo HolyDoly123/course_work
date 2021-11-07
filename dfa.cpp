@@ -67,10 +67,9 @@ QString DFA::validate(QString input) const
                 break;
             }
         }
-        if(flag) continue;;
+        if(flag) continue;
         return QObject::tr("Invalid: no ") + s + QObject::tr(" transition in ") + current_state->getName();
     }
-    qDebug() << current_state->getName() << current_state->isFinal();
     if (current_state->isFinal())
     {
         return QObject::tr("Valid");
@@ -114,13 +113,75 @@ QVector<QVector<QString>> DFA::buildTransitionTable() const
     return table;
 }
 
-QTextStream DFA::buildCode() const
-{
-    return QTextStream();
-}
-
 void DFA::readTransitionTable(const QVector<QVector<QString>> &transition_table)
 {
+}
+
+QVector<QVector<QString>> DFA::minimizeTransitionTable()
+{
+    QList<QSet<State>> partitions;
+    QSet<State> final_states;
+    QSet<QString> transition_signals;
+    for(const auto& s: _states)
+    {
+        if(s.isFinal())
+        {
+            final_states.insert(s);
+        }
+        for(const auto& t: s.getStateTransitions())
+        {
+            transition_signals.insert(t.getSignal());
+        }
+    }
+    partitions.push_back(final_states);
+    partitions.push_back(_states.subtract(final_states));
+
+    QList<QPair<QSet<State>, QString>> S;
+    for(auto c : transition_signals)
+    {
+        S.push_back(QPair<QSet<State>, QString>(final_states, c));
+        S.push_back(QPair<QSet<State>, QString>(_states.subtract(final_states), c));
+    }
+    QPair<QSet<State>, QString> splitter;
+    QSet<State> R1, R2;
+    QSet<State> old_partition;
+    while(!S.empty())
+    {
+        splitter.first = S.first().first;
+        splitter.second = S.first().second;
+        S.pop_front();
+        for(QSet<State> partition : partitions)
+        {
+            for(auto state : partition)
+            {
+                if(splitter.first.contains(state.getTransition(splitter.second)->getSignal()))
+                {
+                    R1.insert(state);
+                }
+            }
+            R2 = partition.subtract(R1);
+            if(!R1.empty() && !R2.empty())
+            {
+                partitions.replace(partitions.indexOf(partition), R1);
+                partitions.push_back(R2);
+                for(auto c : transition_signals)
+                {
+                    S.push_back(QPair<QSet<State>, QString>(R1, c));
+                    S.push_back(QPair<QSet<State>, QString>(R2, c));
+                }
+                break;
+            }
+        }
+    }
+    for(auto partition:partitions)
+    {
+        qDebug() << "Partition";
+        for(auto e:partition)
+        {
+            qDebug() << e.getName();
+        }
+    }
+    //return partitions
 }
 
 State* DFA::addState(QString name)
@@ -154,4 +215,75 @@ void DFA::clear()
     _name = QObject::tr("Untitled");
     _initial_state = nullptr;
     _states.clear();
+    State::num = 1;
+    Transition::num = 1;
+}
+
+QString DFA::buildCode() const
+{
+    QString result;
+    QTextStream code(&result);
+
+    QString str = getInitial()->getName();
+
+    code << "#include <iostream>\n";
+    code << "#include <map>\n";
+    code << "#include <set>\n";
+    code << "#include <stringstream>\n";
+    code << "#include <string>\n\n";
+
+    code << "using namespace std\n\n";
+
+    code << "map<string, map<string, string>> state_transitions;\n\n";
+    for(const auto& s: _states)
+    {
+        str = s.getName();
+        for(const auto& t : s.getStateTransitions())
+        {
+            code << "state_transitions[\"" << s.getName() << "\"][\"" << t.getSignal() << "\"] = \"" << t.getDestination()->getName() << "\";\n";
+        }
+    }
+    code << "\n";
+
+    code << "int main()\n";
+    code << "{\n";
+    code << "   string init_state = \"" + getInitial()->getName() << "\"\n";
+    code << "   set<string> final_states = {";
+    for(const auto& s: _states)
+    {
+        if(s.isFinal())
+        {
+            code << "\"" << s.getName() << "\", ";
+        }
+    }
+    result.chop(2);
+    code << "}\n\n";
+
+    code << "   stringstream input(\"\"); \\\\place signals here with | as delimiter\n\n";
+    code << "   string s;\n";
+    code << "   string current_state = init_state;\n";
+    code << "   while (getline(input, s, ','))\n";
+    code << "   {\n";
+    code << "       if(state_transitions[current_state].count != 0)\n";
+    code << "           if(state_transitions[current_state][s].count != 0)\n";
+    code << "               current_state = state_transitions[current_state][s];\n";
+    code << "           else\n";
+    code << "           {\n";
+    code << "               cout << \"No \" << s << \" signal in \" << current_state << endl;\n";
+    code << "               return 1;\n";
+    code << "           }\n";
+    code << "       else\n";
+    code << "       {\n";
+    code << "           cout << \"No \" << current_state << \" state exist\" << endl;\n";
+    code << "           return 1;\n";
+    code << "       }\n";
+    code << "   }\n\n";
+
+    code << "   if(final_states[current_state].count == 0)\n";
+    code << "       cout << current_state << \" inst final state\" << endl;\n";
+    code << "   else\n";
+    code << "       cout << \"Input is correct!\" << endl;\n\n";
+    code << "   return 0;\n";
+    code << "}\n";
+    return result;
 }
