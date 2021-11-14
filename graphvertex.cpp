@@ -51,14 +51,21 @@ void GraphVertex::removeArrow(GraphArrow *arrow)
 
 void GraphVertex::removeArrows()
 {
-    // need a copy here since removeArrow() will
-    // modify the arrows container
     const auto arrowsCopy = arrows;
+    bool first_delete = true;
     for (GraphArrow *arrow : arrowsCopy) {
         arrow->startItem()->removeArrow(arrow);
         arrow->endItem()->removeArrow(arrow);
-        scene()->removeItem(arrow);
-        delete arrow;
+        if(arrow->endItem() == this && first_delete)
+        {
+            scene()->removeItem(arrow);
+            first_delete = false;
+            delete arrow;
+        }
+        else if (arrow->endItem() != this)
+        {
+            delete arrow;
+        }
     }
 }
 
@@ -109,4 +116,9 @@ void GraphVertex::paint(QPainter *painter, const QStyleOptionGraphicsItem *s,
     }
 
     painter->drawText(QPointF(110-name.size()*1.5, 25), name);
+}
+
+void GraphVertex::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
+{
+    //emit stateDescription();
 }

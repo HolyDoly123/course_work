@@ -90,7 +90,7 @@ QVector<QVector<QString>> DFA::buildTransitionTable() const
 
     QVector<QVector<QString>> table;
     QVector<QString> row;
-    row.push_back("Name | Signal/(Output)");
+    row.push_back("Name / Signal-Output");
     for (const auto& h : header)
     {
         row.push_back(h.getSignal());
@@ -117,12 +117,13 @@ void DFA::readTransitionTable(const QVector<QVector<QString>> &transition_table)
 {
 }
 
-QVector<QVector<QString>> DFA::minimizeTransitionTable()
+QList<QSet<State>> DFA::getPartitions()
 {
+    QSet<State> states = _states;
     QList<QSet<State>> partitions;
     QSet<State> final_states;
     QSet<QString> transition_signals;
-    for(const auto& s: _states)
+    for(const auto &s: states)
     {
         if(s.isFinal())
         {
@@ -134,32 +135,38 @@ QVector<QVector<QString>> DFA::minimizeTransitionTable()
         }
     }
     partitions.push_back(final_states);
-    partitions.push_back(_states.subtract(final_states));
+    partitions.push_back(states - final_states);
 
     QList<QPair<QSet<State>, QString>> S;
     for(auto c : transition_signals)
     {
         S.push_back(QPair<QSet<State>, QString>(final_states, c));
-        S.push_back(QPair<QSet<State>, QString>(_states.subtract(final_states), c));
+        S.push_back(QPair<QSet<State>, QString>(states - final_states, c));
     }
-    QPair<QSet<State>, QString> splitter;
+
     QSet<State> R1, R2;
-    QSet<State> old_partition;
     while(!S.empty())
     {
-        splitter.first = S.first().first;
-        splitter.second = S.first().second;
+        R1.clear();
+        R2.clear();
+        QString splitter = S.first().second;
+        QSet<State> splitter_set = S.first().first;
         S.pop_front();
         for(QSet<State> partition : partitions)
         {
+            if(partition.size() == 1) continue;
             for(auto state : partition)
             {
-                if(splitter.first.contains(state.getTransition(splitter.second)->getSignal()))
+                if(!state.getTransition(splitter))
+                {
+                    continue;
+                }
+                if(splitter_set.contains(*(state.getTransition(splitter)->getDestination())))
                 {
                     R1.insert(state);
                 }
             }
-            R2 = partition.subtract(R1);
+            R2 = partition - R1;
             if(!R1.empty() && !R2.empty())
             {
                 partitions.replace(partitions.indexOf(partition), R1);
@@ -173,15 +180,105 @@ QVector<QVector<QString>> DFA::minimizeTransitionTable()
             }
         }
     }
-    for(auto partition:partitions)
+    return partitions;
+}
+
+QSet<State> DFA::getReachableStates()
+{
+    QSet<State> visited;
+    QSet<State> to_visit;
+
+    to_visit.insert(*getInitial());
+
+    while(!to_visit.empty())
     {
-        qDebug() << "Partition";
-        for(auto e:partition)
+        State current_state = *to_visit.begin();
+        if(visited.contains(current_state))
         {
-            qDebug() << e.getName();
+            to_visit.remove(current_state);
+            continue;
+        }
+        for(auto t: current_state.getStateTransitions())
+        {
+            to_visit.insert(*t.getDestination());
+        }
+        visited.insert(current_state);
+        to_visit.remove(current_state);
+    }
+    return visited;
+}
+
+QString DFA::getDestinationPartition(State destination, QList<QSet<State>> partitions)
+{
+    QString result;
+    QTextStream partition_stream(&result);
+    partition_stream << "{";
+    for(const auto& p: partitions)
+    {
+        if(p.contains(destination))
+        {
+            for(const auto& s: p)
+            {
+                partition_stream << s.getName() << ", ";
+            }
+            break;
         }
     }
-    //return partitions
+    result.chop(2);
+    partition_stream << "}";
+    return result;
+}
+
+QVector<QVector<QString>> DFA::minimizeTransitionTable()
+{
+    QList<QSet<State>> partitions = getPartitions();
+    QSet<State> reachable_states = getReachableStates();
+
+    QSet<Transition> header;
+    for(const auto& s: reachable_states)
+    {
+        for(const auto& t : s.getStateTransitions())
+        {
+            header.insert(t);
+        }
+    }
+
+    QVector<QVector<QString>> table;
+    QVector<QString> row;
+    row.push_back("Name / Signal");
+    for (const auto& h : header)
+    {
+        row.push_back(h.getSignal());
+    }
+    table.push_back(row);
+    row = QVector<QString>(header.count()+1, "Error");
+    for(const auto& p: partitions)
+    {
+        QString name;
+        QTextStream name_stream(&name);
+        name_stream << "{";
+        for(const auto& s: p)
+        {
+            if(!reachable_states.contains(s))
+            {
+                continue;
+            }
+            name_stream << s.getName() << ", ";
+            for(const auto& t : s.getStateTransitions())
+            {
+                row[table[0].indexOf(t.getSignal())] = getDestinationPartition(*t.getDestination(), partitions);
+            }
+        }
+        if(!(name == "{"))
+        {
+            name.chop(2);
+            name_stream << "}";
+            row[0] = name;
+            table.push_back(row);
+            row = QVector<QString>(header.count()+1, "Error");
+        }
+    }
+    return table;
 }
 
 State* DFA::addState(QString name)

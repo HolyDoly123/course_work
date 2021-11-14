@@ -18,21 +18,7 @@ Transition::Transition(QString signal, QString description,
         _signal = signal;
     }
 }
-/*
-Transition::Transition(const Transition& other)
-    :_signal(other._signal), _description(other._description),
-      _source(other._source), _destination(other._destination)
-{}
 
-Transition& Transition::operator=(const Transition& other)
-{
-    if (this != &other) // not a self-assignment
-    {
-        //do copy
-    }
-    return *this;
-}
-*/
 void Transition::setSource(State *source)
 {
     _source = source;
@@ -87,7 +73,6 @@ bool operator==(const Transition& left, const Transition& right)
 {
     return left._signal == right._signal;
 }
-
 
 void Transition::clear()
 {

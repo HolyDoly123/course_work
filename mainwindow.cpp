@@ -7,13 +7,9 @@
 #include "transition.h"
 #include "mainwindow.h"
 //Mainwindow
-//TODO: table minimize
-//TODO: save/open file (my, svg), preferencies
-//Graphic scene
-//TODO: self transition
+//TODO: save/open file (DFA), preferencies
 //Other
-//TODO: Test all classes
-//TODO:  Clear bugs (Arrow, inputs)
+//TODO:  Clear bugs (Arrow painting)
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -157,12 +153,29 @@ void MainWindow::open()
 bool MainWindow::saveAs()
 {
     QFileDialog dialog(this, tr("Save graph"), curFile,
-                       tr( "Image (*.svg);;Application (*.dfa)"));
+                       tr( "Image .svg(*.svg);;Application .dfa(*.dfa)"));
     dialog.setWindowModality(Qt::WindowModal);
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     if (dialog.exec() != QDialog::Accepted)
         return false;
-    return saveFile(dialog.selectedFiles().first());
+    QFileInfo fi(dialog.selectedFiles().first());
+    QString extension = fi.completeSuffix();
+    if(extension.isEmpty())
+    {
+        QMessageBox::warning(this, tr("Save Error"),
+                                      "No extension given");
+    }
+    else if (extension == "svg")
+    {
+        return saveSvgFile(dialog.selectedFiles().first());
+    }
+    else if (extension == "dfa")
+    {
+        foreach(QGraphicsItem* item, scene->items())
+        {
+            qDebug() << item;
+        }
+    }
 }
 
 void MainWindow::preferences()
@@ -200,8 +213,6 @@ void MainWindow::buildTable()
     QString info = myDfa.isDFAValid();
     if(info == "OK")
     {
-        myDfa.minimizeTransitionTable();
-
         tableWindow = new DfaTable(&myDfa, this);
         tableWindow->setMinimumSize(480, 320);
         tableWindow->setWindowFlag(Qt::Window);
@@ -234,7 +245,23 @@ void MainWindow::buildCode()
 
 void MainWindow::manual()
 {
-    QMessageBox::information(this, tr("Manual"), tr("See guides"), QMessageBox::Help);
+    QFile file("/home/rudakov/pg/course_work/PCADDFA/manual.html");
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, tr("Error"), tr("Could not open file"));
+        return;
+    }
+
+    QTextStream in(&file);
+
+    QTextBrowser *tb = new QTextBrowser(this);
+    tb->setReadOnly(true);
+    tb->setWindowFlag(Qt::Window);
+    tb->setWindowTitle("User manual");
+    tb->setOpenExternalLinks(true);
+    tb->setHtml(in.readAll());
+    tb->setMinimumSize(720, 480);
+    tb->show();
 }
 
 void MainWindow::about()
@@ -262,13 +289,10 @@ void MainWindow::readSettings()
 
 bool MainWindow::maybeSave()
 {
-    if (!isModified())
-        return true;
     const QMessageBox::StandardButton ret
         = QMessageBox::warning(this, tr("Application"),
-                               tr("The document has been modified.\n"
-                                  "Do you want to save your changes?"),
-                               QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+                               tr("Do you want to save your changes?"),
+                               QMessageBox::Save | QMessageBox::Close | QMessageBox::Cancel);
     switch (ret) {
     case QMessageBox::Save:
         return saveAs();
@@ -280,32 +304,20 @@ bool MainWindow::maybeSave()
     return true;
 }
 
-bool MainWindow::saveFile(const QString &fileName)
+bool MainWindow::saveSvgFile(const QString &fileName)
 {
-    QString errorMessage;
-/*
-    QGuiApplication::setOverrideCursor(Qt::WaitCursor);
-    QSaveFile file(fileName);
-    if (file.open(QFile::WriteOnly | QFile::Text)) {
-        QTextStream out(&file);
-        out << textEdit->toPlainText();
-        if (!file.commit()) {
-            errorMessage = tr("Cannot write file %1:\n%2.")
-                           .arg(QDir::toNativeSeparators(fileName), file.errorString());
-        }
-    } else {
-        errorMessage = tr("Cannot open file %1 for writing:\n%2.")
-                       .arg(QDir::toNativeSeparators(fileName), file.errorString());
-    }
-    QGuiApplication::restoreOverrideCursor();
+    QSvgGenerator generator;
+    generator.setFileName(fileName);
+    generator.setSize(QSize(scene->width(), scene->height()));
+    generator.setViewBox(QRect(0, 0, scene->width(), scene->height()));
+    generator.setTitle(tr("SVG DFA"));
+    generator.setDescription(tr("File created by SVG generator"));
 
-    if (!errorMessage.isEmpty()) {
-        QMessageBox::warning(this, tr("Application"), errorMessage);
-        return false;
-    }
-*/
-    setCurrentFile(fileName);
-    statusBar()->showMessage(tr("File saved"), 2000);
+    QPainter painter;
+    painter.begin(&generator);
+    scene->render(&painter);
+    painter.end();
+    QMessageBox::information(this, tr("Application"), "File saved");
     return true;
 }
 
@@ -352,7 +364,6 @@ void MainWindow::setCurrentFile(const QString &fileName)
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     if (maybeSave()) {
-        writeSettings();
         event->accept();
     } else {
         event->ignore();

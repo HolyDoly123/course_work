@@ -12,14 +12,13 @@ private:
     State *_initial_state;
     QSet<State> _states;
 
+    QString getDestinationPartition(State destination, QList<QSet<State>> partitions);
+
 public:
     static const State ERROR_STATE;
 
     DFA() = delete;
     DFA(QString name = QObject::tr("Untitled"));
-    //DFA(QDataStream / SVG);
-    //DFA(const DFA& other); // II. copy constructor
-    //DFA& operator=(const DFA& other); // III. copy assignment
     virtual ~DFA() {};
 
     QString isDFAValid();
@@ -29,12 +28,16 @@ public:
 
     QString getName() const;
     State* getInitial() const;
+    QSet<State> getStates() const {return _states;}
 
     QString validate(QString input) const;
     QVector<QVector<QString>> buildTransitionTable() const;
     QVector<QVector<QString>> minimizeTransitionTable();
     QString buildCode() const;
     void readTransitionTable(const QVector<QVector<QString>> &transition_table);
+
+    QList<QSet<State>> getPartitions();
+    QSet<State> getReachableStates();
 
     State* addState(QString name);
     bool removeState(QString name);

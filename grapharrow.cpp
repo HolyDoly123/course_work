@@ -70,7 +70,17 @@ void GraphArrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
         painter->setBrush(Qt::NoBrush);
         path.moveTo(centerLine.p1());
 
-        if (myStartItem->pos().x() < myEndItem->pos().x())
+        if (myStartItem == myEndItem)
+        {
+            myStartPoint = myStartItem->pos()+myStartItem->boundingRect().center() - QPointF(0, myEndItem->boundingRect().height()/2) + QPointF(40, 0);
+            myEndPoint = myEndItem->pos()+myEndItem->boundingRect().center() - QPointF(40, myEndItem->boundingRect().height()/2);
+            centerLine.setP2(myEndPoint);
+            centerLine.setP1(myStartPoint);
+            path.cubicTo(centerLine.p1()-QPointF(0,50),centerLine.center()-QPointF(0,100), centerLine.p2());
+            angle = M_PI + M_PI / 3;
+            k = -1;
+        }
+        else if (myStartItem->pos().x() < myEndItem->pos().x())
         {
             myStartPoint = myStartItem->pos()+myStartItem->boundingRect().center();
             myEndPoint = myEndItem->pos()+myEndItem->boundingRect().center() + QPointF(0, myEndItem->boundingRect().height()/2);
@@ -87,7 +97,6 @@ void GraphArrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
             centerLine.setP1(myStartPoint);
             path.cubicTo(centerLine.p1()-QPointF(0,50),centerLine.center()-QPointF(0,200), centerLine.p2());
             angle = M_PI + M_PI / 3;
-
             k = -1;
         }
         painter->drawPath(path);
@@ -113,11 +122,11 @@ void GraphArrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
 
     if (output.isEmpty())
     {
-        painter->drawText(centerLine.center()+ k*QPointF(0,50), signal);
+        painter->drawText(centerLine.center()+ k*QPointF(0,65), signal);
     }
     else
     {
-        painter->drawText(centerLine.center()+ k*QPointF(0,50), signal + "/" + output);
+        painter->drawText(centerLine.center()+ k*QPointF(0,65), signal + "/" + output);
     }
 
     if (isSelected())

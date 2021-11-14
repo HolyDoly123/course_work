@@ -14,10 +14,14 @@ DfaTable::DfaTable(DFA* dfa, QWidget *parent)
 
     myTable->setMinimumSize(QSize(480, 320));
     QPushButton *minimizeButton = new QPushButton(tr("Minimize"), this);
-    minimizeButton->setDisabled(true);
+    connect(minimizeButton, &QPushButton::clicked, this, &DfaTable::minimizeTable);
 
     QPushButton *saveButton = new QPushButton(tr("Save"), this);
     connect(saveButton, &QPushButton::clicked, this, &DfaTable::saveTable);
+
+    minimization_information = new QPlainTextEdit(this);
+    minimization_information->setVisible(false);
+    minimization_information->setReadOnly(true);
 
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->addWidget(minimizeButton);
@@ -25,6 +29,7 @@ DfaTable::DfaTable(DFA* dfa, QWidget *parent)
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addLayout(hlayout);
+    mainLayout->addWidget(minimization_information);
     mainLayout->addWidget(myTable);
     setLayout(mainLayout);
     fillTable();
@@ -33,7 +38,7 @@ DfaTable::DfaTable(DFA* dfa, QWidget *parent)
 void DfaTable::saveTable()
 {
     QFileDialog dialog(this, tr("Save table"), "",
-                       tr( "Text table (*.csv)"));
+                       tr( "Text .csv(*.csv)"));
     dialog.setWindowModality(Qt::WindowModal);
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     if (dialog.exec() != QDialog::Accepted)
@@ -85,6 +90,55 @@ void DfaTable::saveTable()
 void DfaTable::fillTable()
 {
     QVector<QVector<QString>> data = myDfa->buildTransitionTable();
+    myTable->setRowCount(data.size());
+    myTable->setColumnCount(data[0].size());
+
+    for (uint i = 0; i < data.size(); i++)
+    {
+        for (uint j = 0; j < data[0].size(); j++)
+        {
+            QTableWidgetItem *newItem = new QTableWidgetItem(data[i][j]);
+            myTable->setItem(i, j, newItem);
+        }
+    }
+}
+
+void DfaTable::minimizeTable()
+{
+    QString text;
+    QTextStream text_stream(&text);
+    text_stream << "Found partitions: ";
+    for(const auto& p: myDfa->getPartitions())
+    {
+        text_stream << "{";
+        for(const auto& s: p)
+        {
+            text_stream << s.getName() << ", ";
+        }
+        text.chop(2);
+        text_stream << "}, ";
+    }
+    text.chop(2);
+    text_stream << ".\n";
+    text_stream << "Removed unreachable states: ";
+    QSet<State> unreachable_states = myDfa->getStates() - myDfa->getReachableStates();
+    if(unreachable_states.empty())
+    {
+        text_stream << "None.";
+    }
+    else
+    {
+        for(auto s: unreachable_states)
+        {
+            text_stream << s.getName() << ", ";
+        }
+        text.chop(2);
+        text_stream << ".";
+    }
+    minimization_information->setPlainText(text);
+    minimization_information->setVisible(true);
+
+    QVector<QVector<QString>> data = myDfa->minimizeTransitionTable();
     myTable->setRowCount(data.size());
     myTable->setColumnCount(data[0].size());
 

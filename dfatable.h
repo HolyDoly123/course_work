@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QTableWidget>
+#include <QPlainTextEdit>
 
 #include "dfa.h"
 
@@ -17,7 +18,9 @@ private slots:
 
 private:
     void fillTable();
+    void minimizeTable();
 
+    QPlainTextEdit *minimization_information;
     DFA *myDfa;
     QTableWidget *myTable;
 };

@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QtWidgets>
+#include <QtSvg/QSvgGenerator>
 #include "dfa.h"
 #include "graphscene.h"
 #include "dfatable.h"
@@ -42,7 +43,7 @@ private:
     bool maybeSave();
     void readSettings();
     void writeSettings();
-    bool saveFile(const QString &fileName);
+    bool saveSvgFile(const QString &fileName);
     bool isModified();
     void setCurrentFile(const QString &fileName);
 

@@ -47,6 +47,7 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *contextMenuEvent) override;
     void wheelEvent(QGraphicsSceneWheelEvent *wheelEvent) override;
+    void drawBackground(QPainter *painter, const QRectF &rect) override;
 
 private slots:
     void insertVertex();
@@ -57,13 +58,11 @@ private slots:
     void changeStateName();
     void changeTransitionSignal();
 
-    void openStateEdit();
-    void openTransitionEdit();
-    void openOutputEdit();
-
     void setInitialVertex();
     void setFinalVertex();
     void setTransitionOutput();
+    void setStateDescription();
+    void setTransitionDescription();
 
 private:
     bool isItemChange(int type) const;
@@ -98,15 +97,17 @@ private:
     QAction *insertArrowAct;
     QAction *deleteArrowAct;
 
-    QAction *openStateEditAct;
-    QAction *openTransitionEditAct;
+    QAction *changeStateNameAct;
+    QAction *changeTransitionSignalAct;
 
     QAction *setInitialVertexAct;
     QAction *setFinalVertexAct;
 
     QAction *setTransitionOutputAct;
 
-    QLineEdit *lineEdit;
+    QAction *setStateDescriptionAct;
+    QAction *setTransitionDescriptionAct;
+
     QGraphicsProxyWidget *proxy;
     GraphVertex *editVertex;
     GraphArrow *editArrow;

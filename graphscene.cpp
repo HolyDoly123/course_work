@@ -4,6 +4,8 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QTextCursor>
 #include <QMenu>
+#include <QInputDialog>
+#include <QMessageBox>
 
 GraphScene::GraphScene(DFA *dfa, QObject *parent)
     : QGraphicsScene(parent)
@@ -16,17 +18,6 @@ GraphScene::GraphScene(DFA *dfa, QObject *parent)
     myVertexColor = Qt::cyan;
     myTextColor = Qt::black;
     myLineColor = Qt::black;
-
-    lineEdit = new QLineEdit;
-    proxy = this->addWidget(lineEdit);
-    proxy->setVisible(false);
-    proxy->setZValue(2000);
-
-    for (int x=0; x<=5000; x+=150)
-        this->addLine(x,0,x,5000, QPen(Qt::gray));
-
-    for (int y=0; y<=5000; y+=150)
-        this->addLine(0,y,5000,y, QPen(Qt::gray));
 
     myDfa = dfa;
 
@@ -52,13 +43,13 @@ void GraphScene::createActions()
     deleteArrowAct->setStatusTip(tr("Delete arrow"));
     connect(deleteArrowAct, &QAction::triggered, this, &GraphScene::deleteArrow);
 
-    openStateEditAct = new QAction(tr("Set name"), this);
-    openStateEditAct->setStatusTip(tr("Sets states name"));
-    connect(openStateEditAct, &QAction::triggered, this, &GraphScene::openStateEdit);
+    changeStateNameAct = new QAction(tr("Set name"), this);
+    changeStateNameAct->setStatusTip(tr("Sets states name"));
+    connect(changeStateNameAct, &QAction::triggered, this, &GraphScene::changeStateName);
 
-    openTransitionEditAct = new QAction(tr("Set signal"), this);
-    openTransitionEditAct->setStatusTip(tr("Sets transition's signal"));
-    connect(openTransitionEditAct, &QAction::triggered, this, &GraphScene::openTransitionEdit);
+    changeTransitionSignalAct = new QAction(tr("Set signal"), this);
+    changeTransitionSignalAct->setStatusTip(tr("Sets transition's signal"));
+    connect(changeTransitionSignalAct, &QAction::triggered, this, &GraphScene::changeTransitionSignal);
 
     setInitialVertexAct = new QAction(tr("Set initial"), this);
     setInitialVertexAct->setStatusTip(tr("Sets state initial"));
@@ -70,8 +61,17 @@ void GraphScene::createActions()
 
     setTransitionOutputAct = new QAction(tr("Set output"), this);
     setTransitionOutputAct->setStatusTip(tr("Sets transitions output"));
-    connect(setTransitionOutputAct, &QAction::triggered, this, &GraphScene::openOutputEdit);
+    connect(setTransitionOutputAct, &QAction::triggered, this, &GraphScene::setTransitionOutput);
+
+    setStateDescriptionAct = new QAction(tr("Set description"), this);
+    setStateDescriptionAct->setStatusTip(tr("Sets state description"));
+    connect(setStateDescriptionAct, &QAction::triggered, this, &GraphScene::setStateDescription);
+
+    setTransitionDescriptionAct = new QAction(tr("Set description"), this);
+    setTransitionDescriptionAct->setStatusTip(tr("Sets state description"));
+    connect(setTransitionDescriptionAct, &QAction::triggered, this, &GraphScene::setTransitionDescription);
 }
+
 
 void GraphScene::createContextMenus()
 {
@@ -81,7 +81,8 @@ void GraphScene::createContextMenus()
 
     vertexContextMenu = new QMenu;
     vertexContextMenu->addAction(insertArrowAct);
-    vertexContextMenu->addAction(openStateEditAct);
+    vertexContextMenu->addAction(changeStateNameAct);
+    vertexContextMenu->addAction(setStateDescriptionAct);
     vertexContextMenu->addSeparator();
     vertexContextMenu->addAction(setInitialVertexAct);
     vertexContextMenu->addAction(setFinalVertexAct);
@@ -89,9 +90,10 @@ void GraphScene::createContextMenus()
     vertexContextMenu->addAction(deleteVertexAct);
 
     arrowContextMenu = new QMenu;
-    arrowContextMenu->addAction(openTransitionEditAct);
+    arrowContextMenu->addAction(changeTransitionSignalAct);
     arrowContextMenu->addSeparator();
     arrowContextMenu->addAction(setTransitionOutputAct);
+    arrowContextMenu->addAction(setTransitionDescriptionAct);
     arrowContextMenu->addSeparator();
     arrowContextMenu->addAction(deleteArrowAct);
 }
@@ -102,7 +104,6 @@ void GraphScene::insertVertex()
     current_state = myDfa->addState(QString());
     item = new GraphVertex(myItemType);
     item->setName(current_state->getName());
-
     item->setPen(QPen(myLineColor, 3));
     item->setBrush(myVertexColor);
     item->setZValue(1000);
@@ -158,68 +159,57 @@ void GraphScene::deleteArrow()
     }
 }
 
-void  GraphScene::openStateEdit()
+void GraphScene::changeStateName()
 {
     QList<QGraphicsItem *> selectedItems = this->selectedItems();
     if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphVertex::Type)
-    {
-        proxy->setVisible(true);
-        proxy->setPos(insertPos);
         editVertex = qgraphicsitem_cast<GraphVertex *>(selectedItems.first());
-        connect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::changeStateName);
-    }
-}
-
-void  GraphScene::openTransitionEdit()
-{
-    QList<QGraphicsItem *> selectedItems = this->selectedItems();
-    if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphArrow::Type)
+    else
+        return;
+    bool ok;
+    QString text = QInputDialog::getText(nullptr, tr("Change state name"),
+                                         tr("Input unique state name"), QLineEdit::Normal,
+                                         "", &ok);
+    if (ok && !text.isEmpty())
     {
-        proxy->setVisible(true);
-        proxy->setPos(insertPos);
-        editArrow = qgraphicsitem_cast<GraphArrow *>(selectedItems.first());
-        connect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::changeTransitionSignal);
-    }
-}
-
-void  GraphScene::openOutputEdit()
-{
-    QList<QGraphicsItem *> selectedItems = this->selectedItems();
-    if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphArrow::Type)
-    {
-        proxy->setVisible(true);
-        proxy->setPos(insertPos);
-        editArrow = qgraphicsitem_cast<GraphArrow *>(selectedItems.first());
-        connect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::setTransitionOutput);
-    }
-}
-
-void GraphScene::changeStateName()
-{
-    QString text = lineEdit->text();
-    if(!text.isEmpty())
-    {
+        if(myDfa->getState(text) != nullptr)
+        {
+            QMessageBox::warning(nullptr, tr("Input Error"),
+                                          "This state already exist");
+            return;
+        }
         myDfa->getState(editVertex->getName())->setName(text);
         editVertex->setName(text);
         editVertex = nullptr;
         this->update();
     }
-    disconnect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::changeStateName);
-    proxy->setVisible(false);
 }
 
 void GraphScene::changeTransitionSignal()
 {
-    QString text = lineEdit->text();
-    if(!text.isEmpty())
+    QList<QGraphicsItem *> selectedItems = this->selectedItems();
+    if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphArrow::Type)
+        editArrow = qgraphicsitem_cast<GraphArrow *>(selectedItems.first());
+    else
+        return;
+
+    bool ok;
+    QString text = QInputDialog::getText(nullptr, tr("Change transition signal"),
+                                         tr("Input state-unique signal for transition"), QLineEdit::Normal,
+                                         "", &ok);
+    if (ok && !text.isEmpty())
     {
+        if(myDfa->getState(editArrow->startItem()->getName())->getTransition(text) != nullptr)
+        {
+            QMessageBox::warning(nullptr, tr("Input Error"),
+                                          "This transition in starting state already exist");
+            return;
+        }
         myDfa->getState(editArrow->startItem()->getName())->getTransition(editArrow->getSignal())->setSignal(text);
         editArrow->setSignal(text);
         editArrow = nullptr;
         this->update();
     }
-    disconnect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::changeTransitionSignal);
-    proxy->setVisible(false);
 }
 
 void GraphScene::setInitialVertex()
@@ -268,13 +258,61 @@ void GraphScene::setFinalVertex()
 
 void GraphScene::setTransitionOutput()
 {
-    QString text = lineEdit->text();
-    myDfa->getState(editArrow->startItem()->getName())->getTransition(editArrow->getSignal())->setOutput(text);
-    editArrow->setOutput(text);
-    editArrow = nullptr;
-    this->update();
-    disconnect(lineEdit, &QLineEdit::editingFinished, this, &GraphScene::setTransitionOutput);
-    proxy->setVisible(false);
+    QList<QGraphicsItem *> selectedItems = this->selectedItems();
+    if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphArrow::Type)
+        editArrow = qgraphicsitem_cast<GraphArrow *>(selectedItems.first());
+    else
+        return;
+    bool ok;
+    QString text = QInputDialog::getText(nullptr, tr("Set transition output"),
+                                         tr("Input any string to serve as output"), QLineEdit::Normal,
+                                         "", &ok);
+    if (ok)
+    {
+        myDfa->getState(editArrow->startItem()->getName())->getTransition(editArrow->getSignal())->setOutput(text);
+        editArrow->setOutput(text);
+        editArrow = nullptr;
+        this->update();
+    }
+}
+
+void GraphScene::setStateDescription()
+{
+    QList<QGraphicsItem *> selectedItems = this->selectedItems();
+    if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphVertex::Type)
+        editVertex = qgraphicsitem_cast<GraphVertex *>(selectedItems.first());
+    else
+        return;
+    bool ok;
+    QString text = QInputDialog::getMultiLineText(nullptr, tr("Set state description"),
+                                         tr("In-detail description of state"),
+                                         myDfa->getState(editVertex->getName())->getDescription(), &ok);
+    if (ok)
+    {
+        myDfa->getState(editVertex->getName())->setDescription(text);
+        editVertex = nullptr;
+        this->update();
+    }
+}
+
+void GraphScene::setTransitionDescription()
+{
+    QList<QGraphicsItem *> selectedItems = this->selectedItems();
+    if (selectedItems.count() == 1 && selectedItems.first()->type() == GraphArrow::Type)
+        editArrow = qgraphicsitem_cast<GraphArrow *>(selectedItems.first());
+    else
+        return;
+    bool ok;
+    QString text = QInputDialog::getMultiLineText(nullptr, tr("Set transition description"),
+                                         tr("In-detail description of transition"),
+                                         myDfa->getState(editArrow->startItem()->getName())->
+                                                getTransition(editArrow->getSignal())->getDescription(), &ok);
+    if (ok)
+    {
+        myDfa->getState(editArrow->startItem()->getName())->getTransition(editArrow->getSignal())->setDescription(text);
+        editVertex = nullptr;
+        this->update();
+    }
 }
 
 void GraphScene::setLineColor(const QColor &color)
@@ -338,8 +376,7 @@ void GraphScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
 
         if (startItems.count() > 0 && endItems.count() > 0 &&
             startItems.first()->type() == GraphVertex::Type &&
-            endItems.first()->type() == GraphVertex::Type &&
-            startItems.first() != endItems.first())
+            endItems.first()->type() == GraphVertex::Type )
         {
             GraphVertex *startItem = qgraphicsitem_cast<GraphVertex *>(startItems.first());
             GraphVertex *endItem = qgraphicsitem_cast<GraphVertex *>(endItems.first());
@@ -426,6 +463,16 @@ void GraphScene::wheelEvent(QGraphicsSceneWheelEvent *wheelEvent)
     views().first()->update();
 }
 
+void GraphScene::drawBackground(QPainter *painter, const QRectF &rect)
+{
+    painter->setPen(QPen(Qt::darkBlue));
+    for (int x=0; x<=5000; x+=150)
+        painter->drawLine(x,0,x,5000);
+
+    for (int y=0; y<=5000; y+=150)
+        painter->drawLine(0,y,5000,y);
+}
+
 bool GraphScene::isItemChange(int type) const
 {
     const QList<QGraphicsItem *> items = selectedItems();
@@ -436,11 +483,6 @@ bool GraphScene::isItemChange(int type) const
 void GraphScene::clear()
 {
     QGraphicsScene::clear();
-    for (int x=0; x<=5000; x+=150)
-        this->addLine(x,0,x,5000, QPen(Qt::gray));
-
-    for (int y=0; y<=5000; y+=150)
-        this->addLine(0,y,5000,y, QPen(Qt::gray));
 }
 
 GraphScene::~GraphScene()

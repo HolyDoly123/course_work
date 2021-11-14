@@ -39,7 +39,7 @@ void CodeEditor::contextMenuEvent(QContextMenuEvent *event)
 void CodeEditor::saveCode()
 {
     QFileDialog dialog(this, tr("Save code"), "",
-                       tr( "Source C++ code (*.cpp)"));
+                       tr( "Source code .cpp (*.cpp)"));
     dialog.setWindowModality(Qt::WindowModal);
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     if (dialog.exec() != QDialog::Accepted)
