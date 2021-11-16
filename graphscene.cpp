@@ -120,6 +120,7 @@ void GraphScene::deleteVertex()
             GraphVertex *vertex = qgraphicsitem_cast<GraphVertex *>(item);
             if (vertex == initialVertex)
             {
+                myDfa->setInitial(nullptr);
                 initialVertex = nullptr;
             }
             vertex->removeArrows();

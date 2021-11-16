@@ -7,11 +7,12 @@
 #include <QMessageBox>
 #include <QMenu>
 
+
 DfaTable::DfaTable(DFA* dfa, QWidget *parent)
     : QWidget(parent), myDfa(dfa)
 {
     myTable = new QTableWidget(this);
-
+    //Создание кнопок и макета
     myTable->setMinimumSize(QSize(480, 320));
     QPushButton *minimizeButton = new QPushButton(tr("Minimize"), this);
     connect(minimizeButton, &QPushButton::clicked, this, &DfaTable::minimizeTable);
@@ -32,9 +33,10 @@ DfaTable::DfaTable(DFA* dfa, QWidget *parent)
     mainLayout->addWidget(minimization_information);
     mainLayout->addWidget(myTable);
     setLayout(mainLayout);
-    fillTable();
+    fillTable(); //Заполнение таблицы
 }
 
+//Сохранение таблицы в формате csv по нажатию кнопки
 void DfaTable::saveTable()
 {
     QFileDialog dialog(this, tr("Save table"), "",
@@ -87,6 +89,7 @@ void DfaTable::saveTable()
     }
 }
 
+//Заполнение виджета таблицы данными из модели
 void DfaTable::fillTable()
 {
     QVector<QVector<QString>> data = myDfa->buildTransitionTable();
@@ -105,6 +108,7 @@ void DfaTable::fillTable()
 
 void DfaTable::minimizeTable()
 {
+    //Вывод справочной информации о минимизации (найденные разбиения и удаленные состояния)
     QString text;
     QTextStream text_stream(&text);
     text_stream << "Found partitions: ";
@@ -138,6 +142,7 @@ void DfaTable::minimizeTable()
     minimization_information->setPlainText(text);
     minimization_information->setVisible(true);
 
+    //Заполнение виджета таблицы автоматом, минимизированным в модели
     QVector<QVector<QString>> data = myDfa->minimizeTransitionTable();
     myTable->setRowCount(data.size());
     myTable->setColumnCount(data[0].size());

@@ -25,6 +25,7 @@ public:
 
     void setName(QString name);
     void setInitial(QString state);
+    void setInitial(State* state) { _initial_state = state; }
 
     QString getName() const;
     State* getInitial() const;

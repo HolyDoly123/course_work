@@ -180,6 +180,11 @@ QList<QSet<State>> DFA::getPartitions()
             }
         }
     }
+    QMutableListIterator<QSet<State>> i(partitions);
+    while (i.hasNext()) {
+        if (i.next().empty())
+            i.remove();
+    }
     return partitions;
 }
 
